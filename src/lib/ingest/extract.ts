@@ -152,8 +152,14 @@ function extractShiftNote(rec: ParsedRecord, dir: Directory): { events: EventDra
   const local = localParts(occurredAt, dir.timezone);
   const text = rec.text;
   const category = categorize(text);
-  const columnUnit = findUnits(j.unit ?? "", dir)[0];
+  let columnUnit = findUnits(j.unit ?? "", dir)[0];
   const mentioned = findUnits(text, dir);
+  if (!columnUnit && mentioned.length) {
+    // No unit was entered. If the note names a resident whose own apartment is mentioned, that is the unit involved.
+    const named = matchResident(dir, text, mentioned.map((u) => dir.units.get(u)!.id), local.date);
+    const own = named?.exact ? mentioned.find((u) => dir.units.get(u)!.id === named.unitId) : undefined;
+    if (own) columnUnit = own;
+  }
   const staffStart = CUES.staffSubject(dir.staff.map((s) => s.firstName));
   const sentences = splitSentences(text);
   const claims = sentences.map((s) => classifySentence(s, staffStart));

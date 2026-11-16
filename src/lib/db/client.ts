@@ -20,8 +20,8 @@ type Holder = { db?: Promise<DB>; close?: () => Promise<void> };
 const g = globalThis as unknown as { __threadline?: Holder };
 const holder: Holder = (g.__threadline ??= {});
 
-export const dataDir = () => path.resolve(process.env.THREADLINE_DATA_DIR ?? ".data");
-const migrationsFolder = () => path.resolve(process.cwd(), "drizzle");
+export const dataDir = () => path.resolve(/*turbopackIgnore: true*/ process.env.THREADLINE_DATA_DIR ?? ".data");
+const migrationsFolder = () => path.join(/*turbopackIgnore: true*/ process.cwd(), "drizzle");
 
 /** Open (and migrate) a PostgreSQL database by URL. */
 export async function openPostgres(url: string): Promise<DB> {

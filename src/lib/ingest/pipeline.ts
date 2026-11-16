@@ -254,8 +254,10 @@ export async function retryJob(ctx: AccessContext, jobId: string) {
   return runJob(jobId);
 }
 
+/** Every failed job (they stay visible until they succeed), then the most recent others. */
 export async function latestJobs(ctx: AccessContext, limit = 30) {
   const db = await getDb();
-  return db.select().from(ingestJobs).where(scopeOf(ctx, ingestJobs)).orderBy(desc(ingestJobs.createdAt)).limit(limit);
+  const failed = await db.select().from(ingestJobs).where(and(scopeOf(ctx, ingestJobs), eq(ingestJobs.status, "failed"))).orderBy(desc(ingestJobs.createdAt));
+  const rest = await db.select().from(ingestJobs).where(and(scopeOf(ctx, ingestJobs), ne(ingestJobs.status, "failed"))).orderBy(desc(ingestJobs.createdAt)).limit(limit);
+  return [...failed, ...rest];
 }
-

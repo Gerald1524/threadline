@@ -21,7 +21,7 @@ export interface Connector { pull(cursor: string | null): Promise<PullResult> }
 
 /** Fixture-backed stand-in for a Google Sheets incremental sync. Contacts no external service. */
 export class MockSheetsConnector implements Connector {
-  constructor(private dir = path.resolve("data/riverside/mock-sync")) {}
+  constructor(private dir = path.join(/*turbopackIgnore: true*/ process.cwd(), "data", "riverside", "mock-sync")) {}
   async pull(cursor: string | null): Promise<PullResult> {
     const n = Number(cursor ?? "0");
     const file = path.join(this.dir, `batch-${n + 1}.csv`);
