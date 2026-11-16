@@ -63,8 +63,20 @@ export async function composePolicy(ctx: AccessContext, q: ParsedQuestion, focus
   const request = focus?.requests[0] ?? null;
   const requestText = request?.claims.map((c) => c.text).join(" ") ?? "";
   const want = clauseKeywords(`${q.text} ${requestText}`);
+  // Residents and staff rarely use the policy's own vocabulary; widen the match with topic synonyms.
+  const TOPIC: [RegExp, string[]][] = [
+    [/mirror|hang|mount|picture|shelf|shelves|install/i, ["install", "installation", "mounted", "items", "anchored", "wall"]],
+    [/drill|power tool/i, ["power", "tools", "drills", "loaned"]],
+    [/borrow|lend|loan/i, ["loan", "loaned", "lend", "tools", "hand"]],
+    [/\bkeys?\b|fob|locked out|lockout/i, ["keys", "replacement", "lockouts", "released", "approval"]],
+    [/noise|loud|music/i, ["quiet", "hours", "noise", "complaint"]],
+    [/smok/i, ["smoking", "complaint", "violation", "notice"]],
+    [/move|elevator/i, ["moves", "elevator", "exception", "movers"]],
+  ];
+  for (const [re, words] of TOPIC) if (re.test(`${q.text} ${requestText}`)) for (const w of words) want.add(w);
+  const hasWeight = /\d\s?(lbs?|pounds)\b/i.test(`${q.text} ${requestText}`);
   const clauses = v.body.split("\n").map((l) => l.trim()).filter((l) => /^\d+\./.test(l));
-  const scored = clauses.map((cl) => ({ cl, score: [...clauseKeywords(cl)].filter((w) => want.has(w) || [...want].some((x) => x.startsWith(w.slice(0, 5)))).length })).filter((x) => x.score > 0).sort((a, b) => b.score - a.score);
+  const scored = clauses.map((cl) => ({ cl, score: [...clauseKeywords(cl)].filter((w) => want.has(w) || [...want].some((x) => x.startsWith(w.slice(0, 5)))).length + (hasWeight && /\blbs\b/i.test(cl) ? 3 : 0) })).filter((x) => x.score > 0).sort((a, b) => b.score - a.score);
   const chosen = (scored.length ? scored.slice(0, 4).map((x) => x.cl) : clauses).sort((a, b) => parseInt(a) - parseInt(b));
   for (const cl of chosen) add("documented_action", `Clause ${cl.replace(/^(\d+)\.\s*/, '$1: "')}"`, sr);
 
@@ -116,17 +128,18 @@ export async function composeBriefing(ctx: AccessContext, now: Date): Promise<Dr
   for (const e of evidences) {
     const last = e.confirmed.at(-1);
     const n = e.complaints.length ? `${plural(e.complaints.length, "report")}, ${plural(e.investigations.length, "staff check")}` : `${plural(e.requests.length + e.followUps.length, "request/follow-up")}`;
-    const openBits = e.openItems.filter((o) => o.kind !== "tentative_link" && o.kind !== "review").slice(0, 2).map((o) => o.text).join(" ");
-    add(e.complaints.length ? "allegation" : "documented_action", `${e.case.number} ${e.case.title} — ${e.case.status.replace("_", " ")}; ${n}; last activity ${last ? fmtDate(last.occurredAt, tz) : "unknown"}.${openBits ? ` Open: ${openBits}` : ""}`, last ? [last.sourceId] : []);
+    const openList = e.openItems.filter((o) => o.kind !== "tentative_link" && o.kind !== "review").slice(0, 2);
+    const openBits = openList.map((o) => o.text).join(" ");
+    add(e.complaints.length ? "allegation" : "documented_action", `${e.case.number} ${e.case.title} — ${e.case.status.replace("_", " ")}; ${n}; last activity ${last ? fmtDate(last.occurredAt, tz) : "unknown"}.${openBits ? ` Open: ${openBits}` : ""}`, [...(last ? [last.sourceId] : []), ...openList.flatMap((o) => o.sourceIds)]);
   }
   if (recurring.length) add("note", `Recurring issues (three or more reports): ${recurring.map((e) => `${e.case.number} ${e.categoryLabel.toLowerCase()} at ${e.subjectLabel}`).join("; ")}.`);
   const pending = await db.select().from(t.approvals).where(and(scopeOf(ctx, t.approvals), eq(t.approvals.status, "pending")));
-  if (pending.length) add("documented_action", `${plural(pending.length, "approval")} waiting for a decision: ${pending.map((a) => `"${a.title}"`).join(", ")}.`);
+  if (pending.length) add("note", `${plural(pending.length, "approval")} waiting for a decision: ${pending.map((a) => `"${a.title}"`).join(", ")}.`);
   const decided = await db.select({ a: t.approvals, u: t.users.fullName }).from(t.approvals).leftJoin(t.users, eq(t.users.id, t.approvals.decidedBy)).where(and(scopeOf(ctx, t.approvals), inArray(t.approvals.status, ["approved", "denied"]), sql`${t.approvals.decidedAt} > ${new Date(now.getTime() - 21 * 86400_000).toISOString()}::timestamptz`)).orderBy(desc(t.approvals.decidedAt));
-  if (decided.length) add("documented_action", `Manager decisions in the last three weeks: ${decided.slice(0, 6).map(({ a, u }) => `"${a.title}" ${a.status} by ${u ?? "a manager"} (${fmtDate(a.decidedAt, tz).replace(/, \d{4}$/, "")})`).join("; ")}.`);
+  if (decided.length) add("note", `Manager decisions in the last three weeks: ${decided.slice(0, 6).map(({ a, u }) => `"${a.title}" ${a.status} by ${u ?? "a manager"} (${fmtDate(a.decidedAt, tz).replace(/, \d{4}$/, "")})`).join("; ")}.`);
   const wos = await db.select().from(t.workOrders).where(and(scopeOf(ctx, t.workOrders), inArray(t.workOrders.status, ["open", "assigned", "in_progress", "on_hold"])));
   const noEta = wos.filter((w) => !w.eta);
-  if (wos.length) add("documented_action", `${plural(wos.length, "work order")} open, ${noEta.length} with no ETA${noEta.length ? ` (${noEta.slice(0, 6).map((w) => w.number).join(", ")})` : ""}.`);
+  if (wos.length) add("note", `${plural(wos.length, "work order")} open, ${noEta.length} with no ETA${noEta.length ? ` (${noEta.slice(0, 6).map((w) => w.number).join(", ")})` : ""}.`);
   const unanswered = evidences.flatMap((e) => e.unanswered.map((u) => ({ e, u })));
   if (unanswered.length) add("missing_evidence", `Resident emails with no recorded reply: ${unanswered.map(({ e, u }) => `${u.reporter ?? "resident"}, ${fmtDate(u.occurredAt, tz).replace(/, \d{4}$/, "")} (${e.case.number})`).join("; ")}.`, unanswered.map(({ u }) => u.sourceId));
   if (can(ctx, "review.read")) {
@@ -136,7 +149,7 @@ export async function composeBriefing(ctx: AccessContext, now: Date): Promise<Dr
   const holds = await db.select({ h: t.legalHolds, c: t.cases.number }).from(t.legalHolds).innerJoin(t.cases, eq(t.cases.id, t.legalHolds.caseId)).where(and(scopeOf(ctx, t.legalHolds), isNull(t.legalHolds.releasedAt)));
   if (holds.length && can(ctx, "management.read")) add("note", `Legal hold in place on ${holds.map((h) => h.c).join(", ")}.`);
   const [handoff] = await db.select({ h: t.handoffs, u: t.users.fullName }).from(t.handoffs).leftJoin(t.users, eq(t.users.id, t.handoffs.fromUserId)).where(scopeOf(ctx, t.handoffs)).orderBy(desc(t.handoffs.createdAt)).limit(1);
-  if (handoff) add("documented_action", `Latest shift handoff: ${handoff.u ?? "staff"}, ${fmtDateTime(handoff.h.createdAt, tz)} (${handoff.h.shiftLabel}) with ${plural(handoff.h.items.length, "item")}.`);
+  if (handoff) add("note", `Latest shift handoff: ${handoff.u ?? "staff"}, ${fmtDateTime(handoff.h.createdAt, tz)} (${handoff.h.shiftLabel}) with ${plural(handoff.h.items.length, "item")}.`);
   draft.coverage = evidences[0]?.coverage ?? (await coverageNotes(ctx));
   for (const cv of draft.coverage) draft.gaps.push({ kind: "coverage", text: `${cv.sourceName}: ${cv.issue}`, sourceIds: [] });
   if (!evidences.length) add("note", "No open cases are visible to your role at this property.");

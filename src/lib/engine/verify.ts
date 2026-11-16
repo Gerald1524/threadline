@@ -49,7 +49,7 @@ export async function verifyClaims(ctx: AccessContext, claims: Omit<AnswerClaim,
     if (cited.some((r) => !r)) return fail("Cites a record that does not exist or that you are not permitted to see.");
     if (c.sourceIds.some((id) => intact.get(id) === false)) return fail("A cited record no longer matches its stored hash.");
     const records = cited as (typeof rows)[number][];
-    const corpus = normalizeText(records.map((r) => `${r.title} ${r.rawText}`).join(" \n "));
+    const corpus = normalizeText(records.map((r) => `${r.title} ${r.rawText} ${JSON.stringify(r.rawJson)}`).join(" \n "));
     const items = c.sourceIds.flatMap((id) => itemsBySource.get(id) ?? []);
 
     // 2. quotes
@@ -72,7 +72,7 @@ export async function verifyClaims(ctx: AccessContext, claims: Omit<AnswerClaim,
       const md = `${String(MONTHS.indexOf(m[1].toLowerCase().slice(0, 3)) + 1).padStart(2, "0")}-${m[2].padStart(2, "0")}`;
       const written = corpus.includes(`${m[1].toLowerCase()}`) && new RegExp(`\\b${m[1].slice(0, 3)}[a-z]*\\.? ${Number(m[2])}\\b`, "i").test(corpus);
       const structured = v.facts.some((f) => new RegExp(`\\b${m[1].slice(0, 3)}[a-z]*\\.? ${Number(m[2])}\\b`, "i").test(f.value));
-      if (!recordDates.has(md) && !written && !structured) return fail(`Mentions ${m[0]}, which is not the date of any cited record.`);
+      if (!recordDates.has(md) && !written && !structured && !corpus.includes(`-${md}`)) return fail(`Mentions ${m[0]}, which is not the date of any cited record.`);
     }
     // 4. staff names
     const actors = normalizeText(items.flatMap((i) => [i.recordedBy?.name, i.onDuty?.name, i.investigatedBy?.name, i.respondedBy?.name, i.assignee?.name, ...i.claims.map((x) => x.observer)]).filter(Boolean).join(" ") + " " + records.map((r) => r.author ?? "").join(" "));

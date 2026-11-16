@@ -35,7 +35,7 @@ Your job is to explain what the records show, clearly and briefly, to someone wh
 
 You may call search_records or read_source if you need to check wording or look for something the evidence does not include. When you are ready, call submit_answer exactly once: a one-sentence headline, then claims. Each claim is one or two sentences, has a classification, and cites the source labels (S1, S2, … or labels returned by tools) that support it. Quote sparingly and only verbatim. "speakable" is the same content as plain sentences for read-aloud, without labels.`;
 
-function evidenceForModel(draft: Draft) {
+export function evidenceForModel(draft: Draft) {
   const label = new Map(draft.sources.map((s) => [s.id, s.label]));
   const flagged = new Set(draft.sources.filter((s) => s.flagged).map((s) => s.id));
   const cite = (ids: string[]) => ids.map((i) => label.get(i)).filter(Boolean);

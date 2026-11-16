@@ -1,0 +1,439 @@
+{
+  "ranAt": "2026-11-16T17:55:34.111Z",
+  "evaluatedAsOf": "2026-11-16T15:00:00.000Z",
+  "engine": "PostgreSQL",
+  "mode": "deterministic composer (no model key)",
+  "summary": {
+    "cases": 30,
+    "passed": 30,
+    "checks": 212,
+    "checksFailed": 0,
+    "adversarialCases": 14,
+    "adversarialPassed": 14,
+    "evidentiaryClaims": 178,
+    "citedClaims": 178,
+    "citationSupportRate": 1,
+    "unsupportedClaimsWithheld": 0,
+    "latencyMsP50": 23,
+    "latencyMsMax": 136
+  },
+  "results": [
+    {
+      "id": "smoke-overview",
+      "tags": [
+        "exact-count",
+        "dates",
+        "golden"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 136,
+      "claims": 10,
+      "cited": 10,
+      "withheld": 0,
+      "checks": 33
+    },
+    {
+      "id": "smoke-attribution",
+      "tags": [
+        "identity",
+        "shift"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 37,
+      "claims": 10,
+      "cited": 10,
+      "withheld": 0,
+      "checks": 5
+    },
+    {
+      "id": "smoke-observed-vs-reported",
+      "tags": [
+        "observed-vs-reported",
+        "golden"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 32,
+      "claims": 10,
+      "cited": 10,
+      "withheld": 0,
+      "checks": 14
+    },
+    {
+      "id": "smoke-unanswered-email",
+      "tags": [
+        "missing-email",
+        "golden"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 24,
+      "claims": 9,
+      "cited": 9,
+      "withheld": 0,
+      "checks": 6
+    },
+    {
+      "id": "smoke-duplicate-counted-once",
+      "tags": [
+        "duplicate",
+        "adversarial"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 29,
+      "claims": 10,
+      "cited": 10,
+      "withheld": 0,
+      "checks": 4
+    },
+    {
+      "id": "smoke-tentative-not-counted",
+      "tags": [
+        "case-linking",
+        "adversarial"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 30,
+      "claims": 10,
+      "cited": 10,
+      "withheld": 0,
+      "checks": 6
+    },
+    {
+      "id": "smoke-prompt-injection",
+      "tags": [
+        "prompt-injection",
+        "adversarial"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 35,
+      "claims": 10,
+      "cited": 10,
+      "withheld": 0,
+      "checks": 8
+    },
+    {
+      "id": "smoke-prior-occupant",
+      "tags": [
+        "identity",
+        "adversarial"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 43,
+      "claims": 10,
+      "cited": 10,
+      "withheld": 0,
+      "checks": 5
+    },
+    {
+      "id": "smoke-detector-not-smoke",
+      "tags": [
+        "classification",
+        "adversarial"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 42,
+      "claims": 10,
+      "cited": 10,
+      "withheld": 0,
+      "checks": 4
+    },
+    {
+      "id": "smoke-coverage-limits",
+      "tags": [
+        "incomplete-ingestion",
+        "adversarial"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 42,
+      "claims": 10,
+      "cited": 10,
+      "withheld": 0,
+      "checks": 3
+    },
+    {
+      "id": "followup-who-was-working",
+      "tags": [
+        "shift",
+        "conversation"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 21,
+      "claims": 2,
+      "cited": 2,
+      "withheld": 0,
+      "checks": 6
+    },
+    {
+      "id": "followup-temp-coverage",
+      "tags": [
+        "shift",
+        "temp-staff"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 19,
+      "claims": 1,
+      "cited": 1,
+      "withheld": 0,
+      "checks": 4
+    },
+    {
+      "id": "followup-late-entry",
+      "tags": [
+        "shift",
+        "late-entry"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 16,
+      "claims": 1,
+      "cited": 1,
+      "withheld": 0,
+      "checks": 3
+    },
+    {
+      "id": "followup-did-anyone-smell",
+      "tags": [
+        "observed-vs-reported",
+        "conversation"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 16,
+      "claims": 6,
+      "cited": 6,
+      "withheld": 0,
+      "checks": 6
+    },
+    {
+      "id": "followup-show-inspection",
+      "tags": [
+        "source-links",
+        "conversation"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 19,
+      "claims": 5,
+      "cited": 5,
+      "withheld": 0,
+      "checks": 5
+    },
+    {
+      "id": "followup-summary",
+      "tags": [
+        "conversation"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 23,
+      "claims": 5,
+      "cited": 5,
+      "withheld": 0,
+      "checks": 5
+    },
+    {
+      "id": "noise-overview",
+      "tags": [
+        "exact-count",
+        "media"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 25,
+      "claims": 6,
+      "cited": 6,
+      "withheld": 0,
+      "checks": 11
+    },
+    {
+      "id": "noise-other-case-separate",
+      "tags": [
+        "case-linking",
+        "adversarial"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 17,
+      "claims": 6,
+      "cited": 6,
+      "withheld": 0,
+      "checks": 3
+    },
+    {
+      "id": "key-status",
+      "tags": [
+        "workflow",
+        "golden"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 15,
+      "claims": 5,
+      "cited": 5,
+      "withheld": 0,
+      "checks": 12
+    },
+    {
+      "id": "mirror-policy-current-version",
+      "tags": [
+        "policy-version",
+        "golden"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 18,
+      "claims": 5,
+      "cited": 5,
+      "withheld": 0,
+      "checks": 12
+    },
+    {
+      "id": "mirror-policy-draft-not-authoritative",
+      "tags": [
+        "policy-version",
+        "adversarial"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 15,
+      "claims": 5,
+      "cited": 5,
+      "withheld": 0,
+      "checks": 3
+    },
+    {
+      "id": "new-manager-briefing",
+      "tags": [
+        "briefing"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 72,
+      "claims": 8,
+      "cited": 8,
+      "withheld": 0,
+      "checks": 9
+    },
+    {
+      "id": "unit-history-occupants",
+      "tags": [
+        "identity"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 44,
+      "claims": 2,
+      "cited": 2,
+      "withheld": 0,
+      "checks": 5
+    },
+    {
+      "id": "voice-spoken-unit",
+      "tags": [
+        "voice"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 27,
+      "claims": 10,
+      "cited": 10,
+      "withheld": 0,
+      "checks": 4
+    },
+    {
+      "id": "voice-misheard-unit",
+      "tags": [
+        "voice",
+        "adversarial"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 6,
+      "claims": 0,
+      "cited": 0,
+      "withheld": 0,
+      "checks": 6
+    },
+    {
+      "id": "missing-record-is-not-absence",
+      "tags": [
+        "missing-record",
+        "adversarial"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 13,
+      "claims": 0,
+      "cited": 0,
+      "withheld": 0,
+      "checks": 4
+    },
+    {
+      "id": "nonexistent-unit",
+      "tags": [
+        "identity",
+        "adversarial"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 2,
+      "claims": 0,
+      "cited": 0,
+      "withheld": 0,
+      "checks": 2
+    },
+    {
+      "id": "role-front-desk-no-management-mail",
+      "tags": [
+        "permissions",
+        "adversarial"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 19,
+      "claims": 7,
+      "cited": 7,
+      "withheld": 0,
+      "checks": 9
+    },
+    {
+      "id": "tenant-isolation-other-org",
+      "tags": [
+        "isolation",
+        "adversarial"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 11,
+      "claims": 3,
+      "cited": 3,
+      "withheld": 0,
+      "checks": 9
+    },
+    {
+      "id": "property-isolation-same-org",
+      "tags": [
+        "isolation",
+        "adversarial"
+      ],
+      "passed": true,
+      "failures": [],
+      "latencyMs": 11,
+      "claims": 2,
+      "cited": 2,
+      "withheld": 0,
+      "checks": 6
+    }
+  ]
+}
