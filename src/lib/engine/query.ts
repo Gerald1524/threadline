@@ -57,7 +57,7 @@ export function parseQuestion(raw: string, dir: Directory, now: Date): ParsedQue
   for (const m of text.matchAll(/\b(\d{1,2})-?([A-Za-z])\b(?!\.?m\b)/g)) {
     if (/^[ap]$/i.test(m[2]) && /\d\s?[ap]\b/i.test(m[0]) && /\b(at|by|before|after|around)\s+\d{1,2}\s?[ap]\b/i.test(text)) continue;
     const label = `${Number(m[1])}${m[2].toUpperCase()}`;
-    if (dir.units.has(label)) units.includes(label) || units.push(label);
+    if (dir.units.has(label)) { if (!units.includes(label)) units.push(label); }
     else if (/^[A-Z]$/.test(m[2].toUpperCase()) && Number(m[1]) <= 60) unknownUnits.push(label);
   }
   const words = [...new Set((text.match(/\b[A-Z][a-z'’]{2,}\b/g) ?? []).map((w) => w.replace(/['’]s$/, "").toLowerCase()))];

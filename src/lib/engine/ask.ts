@@ -198,3 +198,23 @@ export async function ask(ctx: AccessContext, input: { question: string; convers
   });
   return { answer, conversationId: conv.id };
 }
+
+/** The standing answer for a case page: same composer and verifier, no conversation. */
+export async function answerForCase(ctx: AccessContext, caseId: string, now = new Date()): Promise<{ answer: Answer; ev: CaseEvidence } | null> {
+  assertCan(ctx, "cases.read");
+  const started = Date.now();
+  const ev = await buildCaseEvidence(ctx, caseId, now);
+  if (!ev) return null;
+  const db = await getDb();
+  const dir = await loadDirectory(db, ctx.propertyId);
+  const draft = composeCaseOverview(ctx, ev);
+  const checked = await verifyClaims(ctx, draft.claims, { facts: draft.facts, timeline: draft.timeline, staffNames: dir.staff.map((s) => s.fullName), directObservation: !!ev.direct.length });
+  const verified = checked.filter((c) => c.verification === "verified");
+  const withheld = checked.filter((c) => c.verification === "unverified");
+  const answer: Answer = {
+    id: `case-${caseId}`, question: "", intent: "case_overview", mode: "deterministic", modeNote: DET_NOTE, headline: draft.headline, claims: verified, withheld, facts: draft.facts, timeline: draft.timeline, gaps: draft.gaps, conflicts: draft.conflicts,
+    openItems: draft.openItems, actions: draft.actions.filter((a) => !(a.kind === "link" && a.label === "Open case")), sources: draft.sources, coverage: draft.coverage, restrictedNote: draft.restrictedNote, focus: draft.focus, caseRef: draft.caseRef, openSourceId: null, suggestions: [],
+    speakable: [draft.headline, ...verified.slice(0, 6).map((c) => c.text.replace(/"/g, ""))].join(" "), verification: { checked: checked.length, verified: verified.length, withheld: withheld.length }, latencyMs: Date.now() - started,
+  };
+  return { answer, ev };
+}

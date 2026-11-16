@@ -46,7 +46,6 @@ export async function composePolicy(ctx: AccessContext, q: ParsedQuestion, focus
   const draft = empty("policy_lookup");
   const out: C[] = [];
   const add = mk(out);
-  const tz = ctx.timezone;
   const category = q.category !== "general" && q.category !== "maintenance" ? q.category : (focus?.case.category ?? q.category);
   const all = await listPolicies(ctx);
   const policy = (await currentPolicyFor(ctx, { category })) ?? all.find((p) => p.current && [...clauseKeywords(q.text)].some((w) => p.title.toLowerCase().includes(w))) ?? null;
