@@ -1,0 +1,26 @@
+Message-ID: <noise-01@mail.riversidehouse.example>
+Date: Sun, 18 Oct 2026 09:22:00 -0400
+From: Victor Hale <v.hale@example.net>
+To: Riverside House Front Desk <frontdesk@riversidehouse.example>
+Subject: Noise from 6E last night - recording attached
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="----threadline-noise-01"
+
+------threadline-noise-01
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+Hello,
+
+Last night from about 10:30pm until after midnight there was loud thumping and music coming from 6E, directly above me in 5E. I called the desk. I am attaching a recording I made from my bedroom. Please investigate.
+
+Victor Hale, 5E
+
+------threadline-noise-01
+Content-Type: audio/mp4; name="bedroom-noise-2026-10-17.m4a"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="bedroom-noise-2026-10-17.m4a"
+
+U1lOVEhFVElDIE1FRElBIFNUVUIgKG5vdCBhIHJlYWwgYXVkaW8vbXA0IGZpbGUpCkF1ZGlvIHJlY29yZGluZyBzdXBwbGllZCBieSByZXNpZGVudCwgZGVzY3JpYmVkIGJ5IGhpbSBhcyBub2lzZSBoZWFyZCBpbiA1RSBvbiBPY3QgMTcuCg==
+
+------threadline-noise-01--

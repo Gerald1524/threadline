@@ -1,0 +1,322 @@
+[
+  {
+    "path": "riverside/shift-logs/front-desk-log.csv",
+    "sourceId": "src_frontdesk_log",
+    "bytes": 13472
+  },
+  {
+    "path": "riverside/shift-logs/temp-coverage-log.xlsx",
+    "sourceId": "src_temp_log",
+    "bytes": 7936
+  },
+  {
+    "path": "riverside/shift-logs/temp-coverage-log (copy 2).xlsx",
+    "sourceId": "src_temp_log",
+    "bytes": 46
+  },
+  {
+    "path": "riverside/work-orders/work-orders-export.csv",
+    "sourceId": "src_workorders",
+    "bytes": 4844
+  },
+  {
+    "path": "riverside/email/management/2026-10-06_smoke-01.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 747
+  },
+  {
+    "path": "riverside/email/management/2026-10-06_smoke-02.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 968
+  },
+  {
+    "path": "riverside/email/management/2026-10-14_smoke-03.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 703
+  },
+  {
+    "path": "riverside/email/management/2026-10-15_smoke-04.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 823
+  },
+  {
+    "path": "riverside/email/management/2026-10-16_smoke-05.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 705
+  },
+  {
+    "path": "riverside/email/management/2026-10-22_smoke-06.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 1138
+  },
+  {
+    "path": "riverside/email/management/2026-10-23_smoke-07.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 909
+  },
+  {
+    "path": "riverside/email/management/2026-11-05_smoke-08.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 713
+  },
+  {
+    "path": "riverside/email/management/2026-11-06_smoke-09.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 1059
+  },
+  {
+    "path": "riverside/email/management/2026-11-12_smoke-10.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 697
+  },
+  {
+    "path": "riverside/email/management/2026-11-09_smoke-11.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 637
+  },
+  {
+    "path": "riverside/email/management/2025-11-18_prior-01.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 467
+  },
+  {
+    "path": "riverside/email/management/2025-11-19_prior-02.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 687
+  },
+  {
+    "path": "riverside/email/frontdesk/2026-10-18_noise-01.eml",
+    "sourceId": "src_frontdesk_mailbox",
+    "bytes": 1112
+  },
+  {
+    "path": "riverside/email/frontdesk/2026-10-19_noise-02.eml",
+    "sourceId": "src_frontdesk_mailbox",
+    "bytes": 759
+  },
+  {
+    "path": "riverside/email/frontdesk/2026-11-03_noise-03.eml",
+    "sourceId": "src_frontdesk_mailbox",
+    "bytes": 1090
+  },
+  {
+    "path": "riverside/email/frontdesk/2026-11-14_key-01.eml",
+    "sourceId": "src_frontdesk_mailbox",
+    "bytes": 530
+  },
+  {
+    "path": "riverside/email/management/2026-10-08_leak-01.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 500
+  },
+  {
+    "path": "riverside/email/management/2026-10-08_leak-02.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 717
+  },
+  {
+    "path": "riverside/email/management/2026-10-21_leak-03.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 577
+  },
+  {
+    "path": "riverside/email/frontdesk/2026-10-14_pkg-01.eml",
+    "sourceId": "src_frontdesk_mailbox",
+    "bytes": 498
+  },
+  {
+    "path": "riverside/email/frontdesk/2026-10-15_pkg-02.eml",
+    "sourceId": "src_frontdesk_mailbox",
+    "bytes": 606
+  },
+  {
+    "path": "riverside/email/management/2026-10-26_pest-01.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 448
+  },
+  {
+    "path": "riverside/email/management/2026-10-26_pest-02.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 660
+  },
+  {
+    "path": "riverside/email/management/2026-11-02_dog-01.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 515
+  },
+  {
+    "path": "riverside/email/management/2026-11-02_dog-02.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 649
+  },
+  {
+    "path": "riverside/email/management/2026-11-03_water-01.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 404
+  },
+  {
+    "path": "riverside/email/management/2026-11-03_water-02.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 670
+  },
+  {
+    "path": "riverside/email/management/2026-10-20_move-01.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 521
+  },
+  {
+    "path": "riverside/email/management/2026-10-20_move-02.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 726
+  },
+  {
+    "path": "riverside/email/management/2026-10-12_contractor-01.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 499
+  },
+  {
+    "path": "riverside/email/management/2026-10-12_contractor-02.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 762
+  },
+  {
+    "path": "riverside/email/frontdesk/2026-10-27_amenity-01.eml",
+    "sourceId": "src_frontdesk_mailbox",
+    "bytes": 447
+  },
+  {
+    "path": "riverside/email/frontdesk/2026-10-27_amenity-02.eml",
+    "sourceId": "src_frontdesk_mailbox",
+    "bytes": 618
+  },
+  {
+    "path": "riverside/email/frontdesk/2026-11-05_bike-01.eml",
+    "sourceId": "src_frontdesk_mailbox",
+    "bytes": 890
+  },
+  {
+    "path": "riverside/email/management/2026-10-07_vendor-01.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 492
+  },
+  {
+    "path": "riverside/email/management/2026-10-29_vendor-02.eml",
+    "sourceId": "src_mgmt_mailbox",
+    "bytes": 485
+  },
+  {
+    "path": "riverside/email/frontdesk/2026-10-30_misc-01.eml",
+    "sourceId": "src_frontdesk_mailbox",
+    "bytes": 846
+  },
+  {
+    "path": "riverside/email/frontdesk/2026-11-10_misc-02.eml",
+    "sourceId": "src_frontdesk_mailbox",
+    "bytes": 454
+  },
+  {
+    "path": "riverside/email/frontdesk/2026-11-10_misc-03.eml",
+    "sourceId": "src_frontdesk_mailbox",
+    "bytes": 571
+  },
+  {
+    "path": "riverside/policies/smoke-free-policy-v3.pdf",
+    "sourceId": "src_policies",
+    "bytes": 3212
+  },
+  {
+    "path": "riverside/policies/noise-quiet-hours-v2.md",
+    "sourceId": "src_policies",
+    "bytes": 765
+  },
+  {
+    "path": "riverside/policies/key-replacement-v4.md",
+    "sourceId": "src_policies",
+    "bytes": 863
+  },
+  {
+    "path": "riverside/policies/tool-lending-installation-v1.md",
+    "sourceId": "src_policies",
+    "bytes": 468
+  },
+  {
+    "path": "riverside/policies/tool-lending-installation-v2.md",
+    "sourceId": "src_policies",
+    "bytes": 1013
+  },
+  {
+    "path": "riverside/policies/package-handling-v3.md",
+    "sourceId": "src_policies",
+    "bytes": 516
+  },
+  {
+    "path": "riverside/policies/move-in-out-v2.md",
+    "sourceId": "src_policies",
+    "bytes": 515
+  },
+  {
+    "path": "riverside/policies/visitor-access-v2.md",
+    "sourceId": "src_policies",
+    "bytes": 429
+  },
+  {
+    "path": "riverside/policies/contractor-access-v2.md",
+    "sourceId": "src_policies",
+    "bytes": 448
+  },
+  {
+    "path": "riverside/policies/pets-v3.md",
+    "sourceId": "src_policies",
+    "bytes": 335
+  },
+  {
+    "path": "riverside/policies/amenity-booking-v1.md",
+    "sourceId": "src_policies",
+    "bytes": 359
+  },
+  {
+    "path": "riverside/policies/bike-storage-v1.md",
+    "sourceId": "src_policies",
+    "bytes": 319
+  },
+  {
+    "path": "riverside/policies/after-hours-maintenance-v2.md",
+    "sourceId": "src_policies",
+    "bytes": 494
+  },
+  {
+    "path": "riverside/policies/incident-documentation-v2.md",
+    "sourceId": "src_policies",
+    "bytes": 663
+  },
+  {
+    "path": "riverside/docs/front-desk-interview-notes-DRAFT.txt",
+    "sourceId": "src_docs",
+    "bytes": 464
+  },
+  {
+    "path": "riverside/mock-sync/batch-1.csv",
+    "sourceId": "src_mock_sheets",
+    "bytes": 365
+  },
+  {
+    "path": "riverside/mock-sync/batch-2.csv",
+    "sourceId": "src_mock_sheets",
+    "bytes": 301
+  },
+  {
+    "path": "annex/shift-logs/annex-desk-log.csv",
+    "sourceId": "src_annex_log",
+    "bytes": 382
+  },
+  {
+    "path": "calder/email/management/2026-10-09_calder-01.eml",
+    "sourceId": "src_calder_mailbox",
+    "bytes": 491
+  },
+  {
+    "path": "calder/email/management/2026-10-10_calder-02.eml",
+    "sourceId": "src_calder_mailbox",
+    "bytes": 623
+  }
+]

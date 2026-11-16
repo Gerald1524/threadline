@@ -1,0 +1,24 @@
+Message-ID: <bike-01@mail.riversidehouse.example>
+Date: Thu, 05 Nov 2026 09:12:00 -0500
+From: Hannah Weiss <h.weiss@example.net>
+To: Riverside House Front Desk <frontdesk@riversidehouse.example>
+Subject: Bike storage form attached (6B)
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="----threadline-bike-01"
+
+------threadline-bike-01
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+Attached is my signed bike storage form. Please let me know when I can pick up a fob.
+
+Hannah Weiss, 6B
+
+------threadline-bike-01
+Content-Type: application/pdf; name="bike-storage-form-6B.pdf"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="bike-storage-form-6B.pdf"
+
+U1lOVEhFVElDIE1FRElBIFNUVUIgKG5vdCBhIHJlYWwgYXBwbGljYXRpb24vcGRmIGZpbGUpClNpZ25lZCBiaWtlIHN0b3JhZ2UgZm9ybSAoc3R1YikuCg==
+
+------threadline-bike-01--

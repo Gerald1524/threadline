@@ -1,0 +1,80 @@
+Entry ID,Logged At,Date,Time,Shift,Staff,Unit,Type,Notes
+FD-1001-R02,10/1/2026 12:13:00,10/1/2026,12:10 PM,Day,Angela Brooks,14D,Package,"Amazon locker full, 3 overflow pkgs shelved for 14D."
+FD-1001-R01,10/1/2026 21:48:00,10/1/2026,9:45 PM,Evening,Michael Torres,9A,Visitor,"Guest for 9A signed in, resident confirmed by phone."
+FD-1002-R03,10/2/2026 10:18:00,10/2/2026,10:15 AM,Day,Angela Brooks,5E,Visitor,Housekeeper for 5E signed in with key release on file.
+FD-1005-R04,10/5/2026 11:00:00,10/5/2026,10:55 AM,Day,Angela Brooks,,Vendor,"Window cleaning crew signed in for the lobby glass, done by noon."
+FD-1005-07,10/5/2026 15:47:00,10/5/2026,3:45 PM,Evening,Michael Torres,12C,Complaint,"Ms. Whitfield (12C) called the desk. Says strong cigarette smoke is coming into her apartment from 12B again, bathroom and hallway side. Radioed Carlos to go up and check."
+FD-1005-08,10/5/2026 16:05:00,10/5/2026,3:54 PM,Evening,Michael Torres,12B,Inspection,"Carlos went up to 12 at 3:54pm. No smoke smell in the 12th floor hallway. Knocked on 12B twice, no answer. Called Ms. Whitfield back and told her nothing was detected, we will keep monitoring."
+FD-1006-R06,10/6/2026 17:39:00,10/6/2026,5:35 PM,Evening,Michael Torres,,Vendor,"Window cleaning crew signed in for the lobby glass, done by noon."
+FD-1006-R05,10/6/2026 19:52:00,10/6/2026,7:50 PM,Evening,Michael Torres,15E,Package,"Oversized pkg for 15E, stored in the back room. Text sent."
+FD-1007-R08,10/7/2026 13:42:00,10/7/2026,1:35 PM,Day,Angela Brooks,,Vendor,"Apex Elevator tech in for monthly service, signed out after 2 hrs."
+FD-1007-R07,10/7/2026 16:03:00,10/7/2026,4:00 PM,Evening,Michael Torres,15A,Visitor,"Guest for 15A signed in, resident confirmed by phone."
+FD-1008-03,10/8/2026 10:24:00,10/8/2026,10:20 AM,Day,Angela Brooks,3A,Complaint,"Ms. Castillo (3A) called, water dripping from her bathroom ceiling. Thinks the leak is from 4A above. Called Frank."
+FD-1008-04,10/8/2026 10:55:00,10/8/2026,10:35 AM,Day,Angela Brooks,4A,Inspection,Frank checked 4A at 10:35am re the leak into 3A. Found a loose supply line under the bathroom sink and shut the valve. Mr. Novak was home. Work order opened for Luis.
+FD-1008-R09,10/8/2026 13:57:00,10/8/2026,1:55 PM,Day,Angela Brooks,12B,Lockout,"12B lockout, resident showed photo ID, escorted up."
+FD-1009-R11,10/9/2026 09:57:00,10/9/2026,9:50 AM,Day,Angela Brooks,,Note,"Recycling pickup missed again, bags moved to the service entrance."
+FD-1009-02,10/9/2026 13:40:00,10/9/2026,1:35 PM,Day,Angela Brooks,2B,Complaint,Ms. Park (2B) says her intercom buzzes but she cannot hear visitors. Work order requested.
+FD-1009-R10,10/9/2026 18:03:00,10/9/2026,6:00 PM,Evening,Michael Torres,13B,Delivery,Grocery delivery for 13B sent up with resident OK.
+FD-1012-R12,10/12/2026 21:09:00,10/12/2026,9:05 PM,Evening,Michael Torres,9F,Package,"Amazon locker full, 8 overflow pkgs shelved for 9F."
+FD-1013-R13,10/13/2026 16:37:00,10/13/2026,4:30 PM,Evening,Michael Torres,,Note,"Gym towel service delivered, restocked."
+FD-1013-05,10/13/2026 18:14:00,10/13/2026,6:10 PM,Evening,Michael Torres,10F,Complaint,"Mr. Adeyemi (10F) says a FedEx package marked delivered Saturday is not in the package room. Checked the shelves and the log, not found. Will ask the weekend temp."
+FD-1014-R14,10/14/2026 16:13:00,10/14/2026,4:10 PM,Evening,Michael Torres,8C,Lockout,"Rachel Stein (8C) locked out, verified ID and let in with the master. Logged per key policy."
+FD-1015-02,10/15/2026 09:55:00,10/15/2026,9:30 AM,Day,Angela Brooks,10F,Package,"Found the Adeyemi 10F package behind the oversized shelf, mis-shelved under 10E. Called him, he picked it up at 9:50am."
+FD-1015-R15,10/15/2026 10:57:00,10/15/2026,10:55 AM,Day,Angela Brooks,3A,Package,"UPS dropped 2 pkgs, logged in the package room. Notified 3A."
+FD-1015-R16,10/15/2026 18:02:00,10/15/2026,6:00 PM,Evening,Michael Torres,,Vendor,"Apex Elevator tech in for monthly service, signed out after 2 hrs."
+FD-1016-03,10/16/2026 08:20:00,10/16/2026,8:15 AM,Day,Angela Brooks,8F,Maintenance,"8F smoke detector chirping, low battery. Ms. Brooks asked for a new battery. WO for Luis."
+FD-1016-R17,10/16/2026 19:23:00,10/16/2026,7:20 PM,Evening,Michael Torres,4A,Visitor,Housekeeper for 4A signed in with key release on file.
+FD-1019-R19,10/19/2026 16:57:00,10/19/2026,4:50 PM,Evening,Michael Torres,13E,Visitor,"Guest for 13E signed in, resident confirmed by phone."
+FD-1019-11,10/19/2026 18:38:00,10/19/2026,6:30 PM,Evening,Michael Torres,12C,Complaint,"Ms. Whitfield came to the desk in person. Reports cigarette smoke smell in her bathroom again tonight, says it is from 12B. Very upset. Carlos is on vacation this week so I called Frank."
+FD-1019-12,10/19/2026 19:15:00,10/19/2026,6:50 PM,Evening,Michael Torres,12B,Inspection,"Frank went up at 6:50pm re the 12B smoke complaint. No odor in the 12th floor hallway. Ms. Whitfield let him into 12C, he could not detect smoke in her bathroom at the time of the visit. Did not knock on 12B."
+FD-1019-R18,10/19/2026 20:57:00,10/19/2026,8:50 PM,Evening,Michael Torres,14A,Package,"UPS dropped 8 pkgs, logged in the package room. Notified 14A."
+FD-1020-R20,10/20/2026 11:23:00,10/20/2026,11:20 AM,Day,Angela Brooks,5A,Delivery,Grocery delivery for 5A sent up with resident OK.
+FD-1020-R21,10/20/2026 11:56:00,10/20/2026,11:50 AM,Day,Angela Brooks,13B,Package,"UPS dropped 9 pkgs, logged in the package room. Notified 13B."
+FD-1020-06,10/20/2026 14:22:00,10/20/2026,2:15 PM,Day,Angela Brooks,,Maintenance,"Elevator B stuck on 9 with doors open at 2:15pm. Called Apex Elevator, tech ETA 4pm. Posted sign in lobby."
+FD-1020-10,10/20/2026 17:05:00,10/20/2026,4:50 PM,Evening,Michael Torres,,Maintenance,"Apex tech reset elevator B door operator, back in service 4:50pm."
+FD-1021-R23,10/21/2026 07:33:00,10/21/2026,7:30 AM,Day,Angela Brooks,,Note,"Recycling pickup missed again, bags moved to the service entrance."
+FD-1021-R22,10/21/2026 15:51:00,10/21/2026,3:45 PM,Evening,Michael Torres,6E,Visitor,"Guest for 6E signed in, resident confirmed by phone."
+FD-1022-R24,10/22/2026 11:27:00,10/22/2026,11:20 AM,Day,Angela Brooks,15E,Visitor,Housekeeper for 15E signed in with key release on file.
+FD-1022-R25,10/22/2026 13:49:00,10/22/2026,1:45 PM,Day,Angela Brooks,,Note,"Recycling pickup missed again, bags moved to the service entrance."
+FD-1023-R26,10/23/2026 17:45:00,10/23/2026,5:40 PM,Evening,Michael Torres,5E,Lockout,"5E lockout, resident showed photo ID, escorted up."
+FD-1023-R27,10/23/2026 17:59:00,10/23/2026,5:55 PM,Evening,Michael Torres,15A,Visitor,"Dog walker for 15A picked up at 5:55, back 40 min later."
+FD-1026-04,10/26/2026 11:18:00,10/26/2026,11:15 AM,Day,Angela Brooks,8C,Complaint,Ms. Stein (8C) reports seeing mice droppings under her kitchen sink. Asked for the exterminator. Emailed Priya.
+FD-1026-R28,10/26/2026 11:33:00,10/26/2026,11:30 AM,Day,Angela Brooks,12B,Lockout,"12B lockout, resident showed photo ID, escorted up."
+FD-1027-R29,10/27/2026 08:12:00,10/27/2026,8:05 AM,Day,Angela Brooks,,Note,"Lobby quiet. Rounds done, nothing to report."
+FD-1027-R30,10/27/2026 14:11:00,10/27/2026,2:05 PM,Day,Angela Brooks,7D,Visitor,"Guest for 7D signed in, resident confirmed by phone."
+FD-1027-09,10/27/2026 22:21:00,10/27/2026,10:15 PM,Evening,Sam Okoye,12C,Complaint,"12C Whitfield called about cigarette smell from next door (12B). I did not go up, alone at the desk tonight. Smelled nothing in the lobby."
+FD-1028-R32,10/28/2026 09:41:00,10/28/2026,9:35 AM,Day,Angela Brooks,11A,Delivery,Grocery delivery for 11A sent up with resident OK.
+FD-1028-R31,10/28/2026 19:42:00,10/28/2026,7:35 PM,Evening,Michael Torres,11A,Package,"UPS dropped 6 pkgs, logged in the package room. Notified 11A."
+FD-1029-01,10/29/2026 08:05:00,10/29/2026,8:00 AM,Day,Angela Brooks,,Maintenance,"Lobby door closer slamming again. Told Frank, he will adjust it today."
+FD-1029-R34,10/29/2026 16:12:00,10/29/2026,4:10 PM,Evening,Michael Torres,7D,Package,"Oversized pkg for 7D, stored in the back room. Text sent."
+FD-1029-07,10/29/2026 16:58:00,10/29/2026,4:30 PM,Evening,Michael Torres,5E,Complaint,"Mr. Hale (5E) called, says there is loud banging and drilling noise coming from 6E above him. Asked Carlos to check."
+FD-1029-08,10/29/2026 17:02:00,10/29/2026,4:40 PM,Evening,Michael Torres,6E,Inspection,"Carlos went to the 6th floor at 4:40pm. Stood outside 6E for several minutes and did not hear any noise. Knocked on 6E, no answer. Let Mr. Hale know."
+FD-1029-R33,10/29/2026 20:18:00,10/29/2026,8:15 PM,Evening,Michael Torres,,Note,"Recycling pickup missed again, bags moved to the service entrance."
+FD-1030-R36,10/30/2026 10:41:00,10/30/2026,10:35 AM,Day,Angela Brooks,,Vendor,"Carpet vendor measured the 3rd fl hallway, COI on file."
+FD-1030-04,10/30/2026 10:42:00,10/30/2026,10:30 AM,Day,Angela Brooks,,Note,Carlos found 3 cigarette butts on the stairwell B landing between 11 and 12 during morning rounds. Swept up. No one around.
+FD-1030-R35,10/30/2026 14:59:00,10/30/2026,2:55 PM,Day,Angela Brooks,,Vendor,"Apex Elevator tech in for monthly service, signed out after 2 hrs."
+FD-1030-09,10/30/2026 15:10:00,10/29/2026,10:50 PM,Evening,Michael Torres,5E,Complaint,Late entry for last night. Around 10:50pm Hale 5E called again about loud music from 6E. I was closing out the package log and forgot to write it up. Told him we would note it. Nobody went up.
+FD-1102-R37,11/2/2026 09:29:00,11/2/2026,9:25 AM,Day,Angela Brooks,,Note,"Recycling pickup missed again, bags moved to the service entrance."
+FD-1102-R38,11/2/2026 12:13:00,11/2/2026,12:10 PM,Day,Angela Brooks,,Vendor,"Apex Elevator tech in for monthly service, signed out after 2 hrs."
+FD-1102-06,11/2/2026 16:12:00,11/2/2026,4:10 PM,Evening,Michael Torres,12C,Complaint,"Ms. Whitfield called, says the cigarette smoke is back and coming through the wall she shares with 12B. Sent Carlos up."
+FD-1102-07,11/2/2026 16:41:00,11/2/2026,4:20 PM,Evening,Michael Torres,12B,Inspection,Carlos checked at 4:20pm. No odor detected in the hallway outside 12B or 12C. Knocked on 12B and Mr. Reyes answered the door. Reyes said he does not smoke and nobody was smoking in the apartment. Carlos did not notice any smoke odor at the doorway.
+FD-1103-01,11/3/2026 07:31:00,11/3/2026,7:25 AM,Day,Angela Brooks,14A,Complaint,"Mr. Mitchell (14A) called, no hot water this morning. Two more calls from other upper floor apartments. Frank notified, checking the boiler."
+FD-1103-03,11/3/2026 09:12:00,11/3/2026,8:50 AM,Day,Angela Brooks,14A,Inspection,"Frank reset the mixing valve at 8:50am, hot water restored. Called 14A back to confirm."
+FD-1103-R39,11/3/2026 09:46:00,11/3/2026,9:40 AM,Day,Angela Brooks,,Note,"Salt put down at the front entrance, wet floor sign out."
+FD-1104-R41,11/4/2026 11:01:00,11/4/2026,10:55 AM,Day,Angela Brooks,,Vendor,"Apex Elevator tech in for monthly service, signed out after 2 hrs."
+FD-1104-R40,11/4/2026 11:51:00,11/4/2026,11:45 AM,Day,Angela Brooks,,Vendor,"Apex Elevator tech in for monthly service, signed out after 2 hrs."
+FD-1104-05,11/4/2026 12:10:00,11/4/2026,12:05 PM,Day,Angela Brooks,6B,Request,Ms. Weiss (6B) asked for a bike room fob. Told her it needs a signed bike storage form and manager approval. Gave her the form.
+FD-1105-R42,11/5/2026 12:53:00,11/5/2026,12:50 PM,Day,Angela Brooks,14D,Lockout,"14D lockout, resident showed photo ID, escorted up."
+FD-1105-R43,11/5/2026 19:51:00,11/5/2026,7:45 PM,Evening,Michael Torres,8F,Delivery,"Furniture delivery for 8F, service elevator padded 1-3pm."
+FD-1106-R45,11/6/2026 11:24:00,11/6/2026,11:20 AM,Day,Angela Brooks,6E,Visitor,"Guest for 6E signed in, resident confirmed by phone."
+FD-1106-R44,11/6/2026 14:29:00,11/6/2026,2:25 PM,Day,Angela Brooks,,Note,"Gym towel service delivered, restocked."
+FD-1109-R47,11/9/2026 07:11:00,11/9/2026,7:05 AM,Day,Angela Brooks,14D,Delivery,"Furniture delivery for 14D, service elevator padded 1-3pm."
+FD-1109-R46,11/9/2026 19:51:00,11/9/2026,7:45 PM,Evening,Michael Torres,5E,Delivery,Grocery delivery for 5E sent up with resident OK.
+FD-1110-R48,11/10/2026 08:20:00,11/10/2026,8:15 AM,Day,Angela Brooks,6E,Delivery,Grocery delivery for 6E sent up with resident OK.
+FD-1111-R50,11/11/2026 18:53:00,11/11/2026,6:50 PM,Evening,Michael Torres,,Note,"Salt put down at the front entrance, wet floor sign out."
+FD-1111-R49,11/11/2026 19:07:00,11/11/2026,7:00 PM,Evening,Michael Torres,,Vendor,"Apex Elevator tech in for monthly service, signed out after 2 hrs."
+FD-1112-R51,11/12/2026 15:17:00,11/12/2026,3:15 PM,Evening,Michael Torres,,Note,"Gym towel service delivered, restocked."
+FD-1112-09,11/12/2026 17:26:00,11/12/2026,5:20 PM,Evening,Michael Torres,7D,Request,"Mr. Carter (7D) came to the desk, lost his apartment key at work. Needs a replacement key before Tuesday morning, he is traveling for work on 11/17. Explained that replacement keys need community manager approval. Submitted the request to Priya."
+FD-1112-R52,11/12/2026 19:49:00,11/12/2026,7:45 PM,Evening,Michael Torres,,Note,"Recycling pickup missed again, bags moved to the service entrance."
+FD-1113-01,11/13/2026 01:15:00,11/12/2026,11:30 PM,Overnight,Dmitri Volkov,12C,Complaint,"Late entry. Whitfield 12C called the desk around 11:30pm re cigarette smoke smell from 12B again. Did a walk of the 12th floor at 11:40pm, nothing noted in the hallway or by the trash room. Did not knock on 12B due to the hour."
+FD-1113-R53,11/13/2026 07:41:00,11/13/2026,7:35 AM,Day,Angela Brooks,6E,Lockout,"6E lockout, resident showed photo ID, escorted up."
