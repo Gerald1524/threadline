@@ -14,7 +14,7 @@ As of 2026-11-16. Synthetic data only.
 | Answer-key evaluation | `npm run reset && npm run eval` | 30 / 30 cases, 212 / 212 checks, 14 / 14 adversarial |
 | Seed / import | `npm run reset` | 62 files in about 3 s; 1 file fails by design |
 
-Synthetic building: 84 units, 29 residents (plus a former occupant), 12 staff including 3 temps,
+Synthetic building: 84 units, 29 residents (28 current, 1 former occupant), 12 staff including 3 temps,
 90 shift-log entries, 40 emails, 27 imported work orders, 13 policies (14 versions) plus a draft
 document, 13 approvals, 15 cases, 5 attachment stubs. A second property and a second
 organization exist for isolation tests.
