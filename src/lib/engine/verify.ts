@@ -64,7 +64,7 @@ export async function verifyClaims(ctx: AccessContext, claims: Omit<AnswerClaim,
       return { ...c, verification: "verified" };
     }
     // 3. dates
-    const tz = "America/New_York";
+    const tz = ctx.timezone;
     const recordDates = new Set<string>();
     for (const r of records) for (const d of [r.occurredAt, r.recordedAt, r.receivedAt]) if (d) recordDates.add(localParts(d, tz).date.slice(5));
     for (const i of items) for (const d of [i.occurredAt, i.recordedAt]) if (d) recordDates.add(localParts(new Date(d), tz).date.slice(5));
