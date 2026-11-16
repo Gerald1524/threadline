@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --color-ink: #1c1917;
+  --color-paper: #fafaf9;
+  --color-brand-50: #effaf8;
+  --color-brand-100: #d5f1ec;
+  --color-brand-600: #0f766e;
+  --color-brand-700: #115e59;
+  --color-brand-800: #134e4a;
+  --color-brand-900: #0d3b38;
+}
+
+html { color-scheme: light; }
+body { background: var(--color-paper); color: var(--color-ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+:focus-visible { outline: 2px solid var(--color-brand-600); outline-offset: 2px; border-radius: 4px; }
+::selection { background: var(--color-brand-100); }
+
+dialog::backdrop { background: rgb(28 25 23 / 0.45); }
+dialog[open] { animation: rise 140ms ease-out; }
+.drawer[data-open="true"] { animation: slide 180ms ease-out; }
+.fade-in { animation: rise 220ms ease-out; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes slide { from { opacity: 0.6; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+@keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgb(225 29 72 / 0.45); } 100% { box-shadow: 0 0 0 10px rgb(225 29 72 / 0); } }
+.recording { animation: pulse-ring 1.2s infinite; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
