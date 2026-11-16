@@ -15,7 +15,7 @@ import { audit } from "../audit";
 import { getDb, type DB, type Tx } from "../db/client";
 import { caseEvents, cases, claims, dataSources, events, ingestJobs, orgSettings, policies, policyVersions, reviewItems, shiftAssignments, shiftDefinitions, sourceRecords, workOrders } from "../db/schema";
 import { putBlob, readBlobBytesUnchecked } from "../storage";
-import { newId, sha256, stableId } from "../util/core";
+import { newId, recordHash, sha256, stableId } from "../util/core";
 import { loadDirectory } from "./directory";
 import { extractRecord, type Directory } from "./extract";
 import { flagDuplicates, linkEvent, relinkThreads } from "./linking";
@@ -79,7 +79,7 @@ export async function ingestRecords(source: Source, records: ParsedRecord[], opt
 
   for (const rec of sorted) {
     await db.transaction(async (tx) => {
-      const contentHash = sha256(JSON.stringify({ kind: rec.kind, text: rec.text, json: rec.json }));
+      const contentHash = recordHash(rec.kind, rec.text, rec.json);
       const [cur] = await tx.select().from(sourceRecords).where(and(eq(sourceRecords.orgId, source.orgId), eq(sourceRecords.sourceId, source.id), eq(sourceRecords.externalId, rec.externalId), eq(sourceRecords.isCurrent, true)));
       if (cur && cur.contentHash === contentHash) {
         counts.unchanged++;

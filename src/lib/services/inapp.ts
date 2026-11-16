@@ -7,7 +7,7 @@ import { and, eq } from "drizzle-orm";
 import type { AccessContext } from "../access";
 import type { Tx } from "../db/client";
 import { caseEvents, claims, dataSources, events, sourceRecords } from "../db/schema";
-import { newId, sha256, stableId } from "../util/core";
+import { newId, recordHash, stableId } from "../util/core";
 
 export async function inAppSource(tx: Tx, ctx: Pick<AccessContext, "orgId" | "propertyId">) {
   const [s] = await tx.select().from(dataSources).where(and(eq(dataSources.propertyId, ctx.propertyId), eq(dataSources.mode, "in_app")));
@@ -39,7 +39,7 @@ export async function recordInAppEvent(tx: Tx, ctx: AccessContext, e: InAppEvent
   const json = { type: e.type, actor: ctx.userName, actorUserId: ctx.userId, at: at.toISOString(), caseId: e.caseId ?? null, workOrderId: e.workOrderId ?? null };
   await tx.insert(sourceRecords).values({
     id: srId, orgId: ctx.orgId, propertyId: ctx.propertyId, sourceId: source.id, kind: "manual_entry", externalId: srId, locator: `threadline://in-app/${srId}`,
-    title: e.summary, rawText: e.text, rawJson: json, author: ctx.userName, contentHash: sha256(JSON.stringify({ text: e.text, json })),
+    title: e.summary, rawText: e.text, rawJson: json, author: ctx.userName, contentHash: recordHash("manual_entry", e.text, json),
     occurredAt: at, recordedAt: at, ingestedAt: at, sensitivity: "internal_ops", visibility: e.visibility ?? "staff",
   });
   const eventId = stableId("ev", srId, "a");

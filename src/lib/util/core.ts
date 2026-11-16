@@ -2,6 +2,17 @@ import { createHash, randomBytes } from "node:crypto";
 
 export const sha256 = (input: string | Uint8Array) => createHash("sha256").update(input).digest("hex");
 
+/** Stable JSON: object keys sorted recursively, so a jsonb round trip yields the same string. */
+export function canonicalJson(v: unknown): string {
+  if (v === null || typeof v !== "object") return JSON.stringify(v ?? null);
+  if (Array.isArray(v)) return `[${v.map(canonicalJson).join(",")}]`;
+  const o = v as Record<string, unknown>;
+  return `{${Object.keys(o).filter((k) => o[k] !== undefined).sort().map((k) => `${JSON.stringify(k)}:${canonicalJson(o[k])}`).join(",")}}`;
+}
+
+/** Hash of a preserved original: kind + exact text + original fields. */
+export const recordHash = (kind: string, text: string, json: unknown) => sha256(canonicalJson({ kind, text, json }));
+
 /** Prefixed random id for records created at runtime. Seeded records use fixed, readable ids. */
 export const newId = (prefix: string) => `${prefix}_${randomBytes(9).toString("base64url")}`;
 

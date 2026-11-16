@@ -15,7 +15,8 @@
     "data:generate": "tsx scripts/generate-data.ts",
     "seed": "tsx scripts/seed.ts",
     "reset": "tsx scripts/seed.ts --reset",
-    "eval": "tsx scripts/eval.ts"
+    "eval": "tsx scripts/eval.ts",
+    "ask": "tsx scripts/ask.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",

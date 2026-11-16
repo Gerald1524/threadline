@@ -37,6 +37,7 @@ export type SourceRef = {
   contentHash: string;
   version: number;
   flagged: boolean; // instruction-like content detected
+  sensitivity: string;
 };
 
 export type TimelineClaim = { classification: Classification; outcome: string | null; outcomeLabel: string | null; text: string; observer: string | null };
@@ -113,6 +114,7 @@ export type Answer = {
   focus: { caseId?: string; unitId?: string; dateIso?: string; workOrderId?: string; policyKey?: string };
   caseRef: { id: string; number: string; title: string; status: string } | null;
   openSourceId: string | null;
+  suggestions: string[]; // follow-up questions the user can ask next
   speakable: string;
   verification: { checked: number; verified: number; withheld: number };
   latencyMs: number;

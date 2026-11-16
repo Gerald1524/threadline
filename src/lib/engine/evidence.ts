@@ -60,7 +60,7 @@ export async function buildItems(ctx: AccessContext, L: Lookups, evs: EventRow[]
     const s = srMap.get(e.sourceRecordId)!;
     const label = `S${sources.length + 1}`;
     labelOf.set(s.id, label);
-    sources.push({ id: s.id, label, kind: s.kind, title: s.title, externalId: s.externalId, locator: s.locator, sourceName: L.sources.get(s.sourceId)?.name ?? "Unknown source", author: s.author, occurredAt: s.occurredAt?.toISOString() ?? null, recordedAt: s.recordedAt?.toISOString() ?? null, contentHash: s.contentHash, version: s.version, flagged: s.injectionFlag });
+    sources.push({ id: s.id, label, kind: s.kind, title: s.title, externalId: s.externalId, locator: s.locator, sourceName: L.sources.get(s.sourceId)?.name ?? "Unknown source", author: s.author, occurredAt: s.occurredAt?.toISOString() ?? null, recordedAt: s.recordedAt?.toISOString() ?? null, contentHash: s.contentHash, version: s.version, flagged: s.injectionFlag, sensitivity: s.sensitivity });
   }
 
   const items: TimelineItem[] = sorted.map((e) => {
@@ -84,7 +84,7 @@ export async function buildItems(ctx: AccessContext, L: Lookups, evs: EventRow[]
   return { items, sources };
 }
 
-export type CaseEvidence = Awaited<ReturnType<typeof buildCaseEvidence>>;
+export type CaseEvidence = NonNullable<Awaited<ReturnType<typeof buildCaseEvidence>>>;
 
 export async function buildCaseEvidence(ctx: AccessContext, caseId: string, now = new Date()) {
   const db = await getDb();
