@@ -335,3 +335,21 @@ test("an administrator can require two-step verification for everyone", async ({
   await panel.getByTestId("toggle-two-step-requirement").click();
   await expect(panel).toContainText("Optional");
 });
+
+test("security headers on pages and API responses; health check needs no sign-in and reveals no data", async ({ page }) => {
+  const res = await page.goto("/login");
+  const h = res!.headers();
+  expect(h["content-security-policy"]).toContain("default-src 'self'");
+  expect(h["content-security-policy"]).toContain("frame-ancestors 'self'");
+  expect(h["content-security-policy"]).toContain("object-src 'none'");
+  expect(h["x-content-type-options"]).toBe("nosniff");
+  expect(h["x-frame-options"]).toBe("SAMEORIGIN");
+  expect(h["permissions-policy"]).toContain("microphone=(self)");
+  expect(h["x-powered-by"]).toBeUndefined();
+
+  const health = await page.request.get("/api/health");
+  expect(health.status()).toBe(200);
+  expect(await health.json()).toEqual({ status: "ok", checks: { database: "ok", organizationIsolation: "enforced" } });
+  expect(health.headers()["content-security-policy"]).toBeUndefined(); // API responses (PDFs, files) are left to the browser's viewers
+  expect(health.headers()["x-content-type-options"]).toBe("nosniff");
+});

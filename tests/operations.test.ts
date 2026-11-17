@@ -7,7 +7,8 @@ import { getDb } from "@/lib/db/client";
 import * as t from "@/lib/db/schema";
 import { requeueStalledJobs, runJob, runQueuedJobs, submitFile } from "@/lib/ingest/pipeline";
 import { beginTwoStepEnrolment, confirmTwoStepEnrolment, disableTwoStep, getAccount, regenerateRecoveryCodes, verifySignInSecondFactor } from "@/lib/services/account";
-import { decideLifecycle, getPrivacyOverview, proposeLifecycle, retentionReview, setTwoStepRequirement, updateRetention } from "@/lib/services/privacy";
+import { decideLifecycle, getPrivacyOverview, proposeLifecycle, retentionReview, setSourceStatus, setTwoStepRequirement, updateRetention } from "@/lib/services/privacy";
+import { syncDueSources } from "@/lib/connectors";
 import { NOW, as, useSeededDb } from "./helpers/db";
 
 const enc = (s: string) => new TextEncoder().encode(s);
@@ -118,6 +119,24 @@ describe("operations: import worker, two-step verification, retention review", (
     const actions = (await db.select().from(t.auditLog).where(eq(t.auditLog.orgId, "org_northbridge"))).map((a) => a.action);
     expect(actions).toEqual(expect.arrayContaining(["account.two_step_enrolment_started", "account.two_step_enabled", "account.recovery_codes_regenerated", "security.two_step_requirement_changed", "account.two_step_disabled"]));
     expect(await verifyAuditChain(db, "org_northbridge")).toMatchObject({ brokenAt: null });
+  });
+
+  it("the worker's schedule syncs a due connector source once per interval, and never a paused one", async () => {
+    const db = await getDb("system");
+    const every = 15 * 60_000;
+    const now = Date.now();
+    const at = (min: number) => new Date(now + min * 60_000);
+    expect(await syncDueSources({ intervalMs: every, now: at(0) })).toEqual([{ sourceId: "src_mock_sheets", files: 1, upToDate: false }]);
+    expect(await syncDueSources({ intervalMs: every, now: at(1) })).toEqual([]); // not due yet
+    expect(await syncDueSources({ intervalMs: every, now: at(20) })).toEqual([{ sourceId: "src_mock_sheets", files: 1, upToDate: false }]);
+    expect(await syncDueSources({ intervalMs: every, now: at(40) })).toEqual([{ sourceId: "src_mock_sheets", files: 0, upToDate: true }]);
+    const synced = await db.select().from(t.auditLog).where(and(eq(t.auditLog.entityId, "src_mock_sheets"), eq(t.auditLog.action, "source.synced")));
+    expect(synced.map((a) => a.actorLabel)).toEqual(["Threadline scheduler", "Threadline scheduler", "Threadline scheduler"]);
+    expect(synced.every((a) => a.actorUserId === null)).toBe(true);
+
+    await setSourceStatus(marcus, { sourceId: "src_mock_sheets", status: "paused" });
+    expect(await syncDueSources({ intervalMs: every, now: at(24 * 60) })).toEqual([]);
+    await setSourceStatus(marcus, { sourceId: "src_mock_sheets", status: "active" });
   });
 
   it("retention review flags records past their period, counts legal holds, and removes nothing by itself", async () => {
