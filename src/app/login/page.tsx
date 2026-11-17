@@ -17,8 +17,9 @@ const SEE: Record<Role, string> = {
   superintendent: "Operations view, can create and update work orders",
 };
 
-export default async function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ twostep?: string }> }) {
   if (await getContext()) redirect("/");
+  const twoStep = (await searchParams).twostep === "1";
   const demo = process.env.THREADLINE_DEMO_LOGIN !== "0";
   const db = await getDb();
   const rows = demo
@@ -37,6 +38,7 @@ export default async function LoginPage() {
         <p className="mt-4 text-[15px] leading-relaxed text-stone-600">An evidence-first record of complaints, requests, inspections, approvals and handoffs. Every statement links to the original log entry, email or work order.</p>
         <Card className="mt-8 p-5">
           <h2 className="text-sm font-semibold text-stone-900">Sign in</h2>
+          {twoStep ? <p role="status" className="mt-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">That account uses two-step verification. Sign in with its email, password and code.</p> : null}
           <LoginForm />
         </Card>
         <p className="mt-4 text-xs leading-relaxed text-stone-500">Threadline records who received, checked and answered an operational matter. It is not an employee-monitoring or performance tool.</p>

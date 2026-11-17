@@ -9,7 +9,7 @@ import { z } from "zod";
 import { assertCan, scopeOf, type AccessContext } from "../access";
 import { audit, verifyAuditChain } from "../audit";
 import { PROVIDER_CATALOG, keyConfigured, type AiTask } from "../ai/provider";
-import { getDb, type Tx } from "../db/client";
+import { getDb, type Queryable } from "../db/client";
 import * as t from "../db/schema";
 import { SENSITIVITY_ORDER } from "../ingest/lexicon";
 import { deleteBlobFile, putBlob } from "../storage";
@@ -118,7 +118,7 @@ export async function releaseLegalHold(ctx: AccessContext, holdId: string) {
 }
 
 /** Source records preserved by an active legal hold (linked, by any non-rejected link, to a held case). */
-async function heldRecordIds(tx: Tx, orgId: string): Promise<Set<string>> {
+async function heldRecordIds(tx: Queryable, orgId: string): Promise<Set<string>> {
   const rows = await tx.select({ id: t.events.sourceRecordId }).from(t.legalHolds).innerJoin(t.caseEvents, eq(t.caseEvents.caseId, t.legalHolds.caseId)).innerJoin(t.events, eq(t.events.id, t.caseEvents.eventId))
     .where(and(eq(t.legalHolds.orgId, orgId), isNull(t.legalHolds.releasedAt), sql`${t.caseEvents.linkStatus} <> 'rejected'`));
   return new Set(rows.map((r) => r.id));
@@ -128,6 +128,27 @@ async function heldRecordIds(tx: Tx, orgId: string): Promise<Set<string>> {
 
 const matchLifecycle = (orgId: string, recordClass: string, olderThan: Date) =>
   and(eq(t.sourceRecords.orgId, orgId), eq(t.sourceRecords.sensitivity, recordClass), eq(t.sourceRecords.lifecycle, "active"), lt(sql`coalesce(${t.sourceRecords.occurredAt}, ${t.sourceRecords.ingestedAt})`, olderThan));
+
+/**
+ * Retention review: for each class with a retention period, how many active records are now
+ * older than it, and how many of those a legal hold protects. This only reports. Archival or
+ * disposal still has to be proposed and then explicitly approved.
+ */
+export async function retentionReview(ctx: AccessContext, now = new Date()) {
+  assertCan(ctx, "privacy.view");
+  const db = await getDb();
+  const [settings] = await db.select().from(t.orgSettings).where(eq(t.orgSettings.orgId, ctx.orgId));
+  const held = await heldRecordIds(db, ctx.orgId);
+  const out: { recordClass: string; days: number; cutoff: Date; eligible: number; held: number }[] = [];
+  for (const recordClass of SENSITIVITY_ORDER) {
+    const days = settings?.retention[recordClass]?.days;
+    if (!days) continue;
+    const cutoff = new Date(now.getTime() - days * 86_400_000);
+    const matched = await db.select({ id: t.sourceRecords.id }).from(t.sourceRecords).where(matchLifecycle(ctx.orgId, recordClass, cutoff));
+    out.push({ recordClass, days, cutoff, eligible: matched.length, held: matched.filter((m) => held.has(m.id)).length });
+  }
+  return out;
+}
 
 export async function proposeLifecycle(ctx: AccessContext, input: { action: "archive" | "dispose"; recordClass: string; olderThan: Date }) {
   assertCan(ctx, "privacy.admin");

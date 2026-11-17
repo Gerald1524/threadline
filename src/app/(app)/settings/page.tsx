@@ -1,7 +1,7 @@
 import { can } from "@/lib/access";
 import { requireContext } from "@/lib/auth/session";
 import { SENSITIVITY_LABEL, SENSITIVITY_ORDER } from "@/lib/ingest/lexicon";
-import { getPrivacyOverview, listAudit } from "@/lib/services/privacy";
+import { getPrivacyOverview, listAudit, retentionReview } from "@/lib/services/privacy";
 import { fmtDateTime, relative } from "@/lib/util/time";
 import { ExportPanel, LifecyclePanel, ProviderRow, RetentionRow, ScopePanel, SourceStatusButtons } from "@/components/privacy-forms";
 import { Badge, Card, CardHeader, Notice, PageHeader, StatusBadge, td, th } from "@/components/ui";
@@ -12,6 +12,7 @@ export default async function SettingsPage() {
   const ctx = await requireContext("privacy.view");
   const o = await getPrivacyOverview(ctx);
   const audit = await listAudit(ctx, 60);
+  const review = await retentionReview(ctx);
   const admin = can(ctx, "privacy.admin");
   const tz = ctx.timezone;
   const now = new Date();
@@ -55,9 +56,9 @@ export default async function SettingsPage() {
 
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
-            <CardHeader title="Retention by record class" hint="How long each class is kept before it becomes eligible for an approved archival or disposal. Nothing is removed automatically." />
+            <CardHeader title="Retention by record class" hint="How long each class is kept before it becomes eligible for an approved archival or disposal. Records past their period are flagged here for review. Nothing is removed automatically." />
             <div className="divide-y divide-stone-100">
-              {SENSITIVITY_ORDER.map((c) => <RetentionRow key={c} recordClass={c} label={SENSITIVITY_LABEL[c]} days={o.settings.retention[c]?.days ?? null} active={count(c, "active")} archived={count(c, "archived")} disposed={count(c, "disposed")} editable={admin} />)}
+              {SENSITIVITY_ORDER.map((c) => <RetentionRow key={c} recordClass={c} label={SENSITIVITY_LABEL[c]} days={o.settings.retention[c]?.days ?? null} active={count(c, "active")} archived={count(c, "archived")} disposed={count(c, "disposed")} editable={admin} eligible={review.find((r) => r.recordClass === c)?.eligible} held={review.find((r) => r.recordClass === c)?.held} cutoffDate={review.find((r) => r.recordClass === c)?.cutoff.toISOString().slice(0, 10)} />)}
             </div>
           </Card>
           <div className="space-y-6">

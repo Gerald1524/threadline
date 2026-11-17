@@ -58,7 +58,8 @@ none. Outbound messages are simulated.
 
 ## Retention, holds, deletion, export
 
-- Retention is configured per record class. Nothing is deleted automatically.
+- Retention is configured per record class. Records past their period are flagged for review on
+  the Data & Privacy page (with the number a legal hold protects). Nothing is deleted automatically.
 - An admin **proposes** an archival or disposal (class + cutoff date). The proposal shows how
   many records match and how many are protected by a legal hold. A separate explicit approval
   (typed confirmation) executes it.
@@ -111,10 +112,12 @@ are not certifications.
 ## Launch gate — all required before real data
 
 - [ ] `THREADLINE_DEMO_LOGIN=0`, real identity provider or enforced MFA, strong `SESSION_SECRET`
+      (two-step verification is available per account; it is not yet enforced organization-wide,
+      and the secret is not yet encrypted at rest)
 - [ ] Row-level security enabled; independent penetration test of tenant isolation
 - [ ] Managed Postgres with encryption at rest, point-in-time recovery, tested restore
 - [ ] Private object storage with encryption; secret manager
-- [ ] Separate job worker and scheduler; alerting on failed imports
+- [ ] Job worker deployed (`npm run worker`), a scheduler for connector syncs, alerting on failed imports
 - [ ] DPA, subprocessor list and provider terms reviewed by counsel
 - [ ] Each connector's scopes approved by the customer's administrator
 - [ ] Staff-facing notice describing what is recorded and why

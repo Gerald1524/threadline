@@ -66,5 +66,8 @@ Sheets sync that replays local fixture batches (no external service). Planned, n
 | Google Workspace | Drive changes feed with saved page token; Sheets reads; Gmail history | least-privilege scopes; `gmail.readonly` is a restricted scope needing Google verification |
 | BuildingLink, Yardi, AppFolio, … | vendor API where supported, otherwise authorized exports | written authorization from customer and platform |
 
-Scheduling: jobs currently run inline on submit or "Sync now". A scheduler (pg_cron, a worker,
-or the host's cron) calling `runQueuedJobs()` and `syncSource()` is a deployment task.
+Scheduling: by default a job runs inline on submit or "Sync now". With `THREADLINE_JOB_MODE=worker`
+an upload is only queued, and `npm run worker` (one or more processes) drains the queue. Each
+job is claimed atomically, so it is processed once; a job left running by a stopped process is
+re-queued after 10 minutes, or marked failed once it has used its attempts. Scheduled calls to
+`syncSource()` for live connectors remain a deployment task.

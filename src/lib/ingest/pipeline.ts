@@ -201,8 +201,10 @@ export async function runJob(jobId: string) {
   if (job.status === "succeeded" || job.status === "running") return job;
   const [source] = await db.select().from(dataSources).where(eq(dataSources.id, job.sourceId));
   const actor = { userId: "system:ingest", userName: "Threadline ingestion", orgId: job.orgId, propertyId: job.propertyId };
-  const now = new Date();
-  await db.update(ingestJobs).set({ status: "running", attempts: job.attempts + 1, startedAt: now, error: null }).where(eq(ingestJobs.id, jobId));
+  // Claim the job atomically, so two workers (or a worker and an inline run) never process it twice.
+  const [claimed] = await db.update(ingestJobs).set({ status: "running", attempts: sql`${ingestJobs.attempts} + 1`, startedAt: new Date(), error: null })
+    .where(and(eq(ingestJobs.id, jobId), sql`${ingestJobs.status} in ('queued', 'failed')`)).returning({ id: ingestJobs.id });
+  if (!claimed) return (await db.select().from(ingestJobs).where(eq(ingestJobs.id, jobId)))[0];
   try {
     if (source.status !== "active") throw new IngestBlocked(`Source "${source.name}" is ${source.status}.`);
     const { blobs } = await import("../db/schema");
@@ -234,7 +236,24 @@ export async function runJob(jobId: string) {
   return after;
 }
 
-/** Drain queued jobs (used by the scheduler tick and by scripts). */
+/** True when imports are handed to the separate worker process instead of running in the request. */
+export const jobsRunInWorker = () => process.env.THREADLINE_JOB_MODE === "worker";
+
+/**
+ * A job left "running" by a process that stopped is put back in the queue, or marked failed
+ * once it has used its attempts. Either way it stays visible; nothing is silently dropped.
+ */
+export async function requeueStalledJobs(olderThanMs = 10 * 60_000, now = new Date()) {
+  const db = await getDb();
+  const cutoff = new Date(now.getTime() - olderThanMs);
+  const rows = await db.update(ingestJobs).set({
+    status: sql`case when ${ingestJobs.attempts} >= ${ingestJobs.maxAttempts} then 'failed' else 'queued' end`,
+    error: "The import was interrupted before it finished.", finishedAt: now,
+  }).where(and(eq(ingestJobs.status, "running"), lt(ingestJobs.startedAt, cutoff))).returning({ id: ingestJobs.id, status: ingestJobs.status });
+  return rows;
+}
+
+/** Drain queued jobs (used by the worker and by scripts). */
 export async function runQueuedJobs(limit = 50) {
   const db = await getDb();
   const queued = await db.select().from(ingestJobs).where(eq(ingestJobs.status, "queued")).orderBy(ingestJobs.createdAt).limit(limit);

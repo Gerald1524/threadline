@@ -17,6 +17,7 @@ middleware, no `next lint`). Read `node_modules/next/dist/docs/` before changing
 | `npm run test:e2e -- --trace off` | Playwright against a production build (seeds its own database) |
 | `npm run eval` | answer-key evaluation, writes `docs/eval-results.json` (run on a fresh `npm run reset`) |
 | `npm run ask -- u_priya "question"` | ask from the terminal |
+| `npm run worker` | process queued imports outside the web process (app started with `THREADLINE_JOB_MODE=worker`) |
 | `npm run typecheck`, `npm run lint` | must be clean before committing |
 
 Schema change: edit `src/lib/db/schema.ts`, then `npm run db:generate`. Triggers and the

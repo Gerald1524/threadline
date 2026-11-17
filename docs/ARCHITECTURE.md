@@ -71,7 +71,8 @@ adoption. None has been adopted. See `AI_PROVIDER_EVALUATION.md`.
 
 - Application-layer authorization without row-level security yet (single scoped data layer,
   tested; RLS is a launch-gate item).
-- Jobs run inline after submission; the jobs table is durable, but there is no separate worker.
+- Jobs run inline by default; an optional worker process (`npm run worker`) takes them off the
+  request path. There is no scheduler for connector syncs yet.
 - Keyword and structured retrieval only; no embeddings (no provider approved, and the answer
   key passes without them).
 - Local-disk file store and a single app process in development.

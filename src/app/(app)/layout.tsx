@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { and, eq, sql } from "drizzle-orm";
 import { logoutAction, switchPropertyAction } from "@/app/actions";
 import { ROLE_LABEL, can, scopeOf } from "@/lib/access";
@@ -54,10 +55,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Badge tone="amber" title="Every person and record in this workspace is fictional.">Synthetic demo data</Badge>
           </div>
           <div className="flex items-center gap-3 text-sm">
-            <span className="text-right leading-tight">
+            <Link href="/account" title="Your account" className="rounded-md px-1.5 py-0.5 text-right leading-tight hover:bg-stone-100">
               <span className="block font-medium text-stone-900" data-testid="current-user">{ctx.userName}</span>
               <span className="block text-xs text-stone-500">{ROLE_LABEL[ctx.role]}{ctx.employmentType === "temp" ? " · temp" : ""}</span>
-            </span>
+            </Link>
             <form action={logoutAction}><button className={btn("secondary", "sm")}>Sign out</button></form>
           </div>
         </header>

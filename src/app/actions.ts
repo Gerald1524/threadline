@@ -6,6 +6,7 @@
  */
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import QRCode from "qrcode";
 import { redirect } from "next/navigation";
 import { attempt, type ActionResult } from "@/lib/action-result";
 import { verifyPassword, verifyTotp } from "@/lib/auth/password";
@@ -13,7 +14,8 @@ import { createSession, destroySession, listAccessibleProperties, requireContext
 import { syncSource } from "@/lib/connectors";
 import { getDb } from "@/lib/db/client";
 import { users, type HandoffItem } from "@/lib/db/schema";
-import { retryJob, runJob, submitFile } from "@/lib/ingest/pipeline";
+import { jobsRunInWorker, retryJob, runJob, submitFile } from "@/lib/ingest/pipeline";
+import { beginTwoStepEnrolment, confirmTwoStepEnrolment, disableTwoStep } from "@/lib/services/account";
 import { decideApproval, requestApproval } from "@/lib/services/approvals";
 import { addCorrection, setCaseStatus, setEventLink, type CaseStatus } from "@/lib/services/cases";
 import { acknowledgeHandoff, publishHandoff } from "@/lib/services/handoffs";
@@ -59,8 +61,34 @@ export async function demoLoginAction(form: FormData) {
   const userId = String(form.get("userId") ?? "");
   const { user, options } = await listAccessibleProperties(userId);
   if (!user || !options.length) redirect("/login");
+  // One-click sign-in never bypasses two-step verification.
+  if (user.totpEnabled) redirect("/login?twostep=1");
   await createSession(user.id, options[0].propertyId);
   redirect("/");
+}
+
+// ---------------------------------------------------------------- account
+
+export async function beginTwoStepAction(): Promise<ActionResult<{ secret: string; qrSvg: string }>> {
+  const ctx = await requireContext();
+  return attempt(async () => {
+    const { secret, uri } = await beginTwoStepEnrolment(ctx);
+    return { secret, qrSvg: await QRCode.toString(uri, { type: "svg", margin: 1, errorCorrectionLevel: "M" }) };
+  });
+}
+
+export async function confirmTwoStepAction(code: string) {
+  const ctx = await requireContext();
+  const r = await attempt(() => confirmTwoStepEnrolment(ctx, code), "Two-step verification is on. You will be asked for a code at your next sign-in.");
+  refresh();
+  return r;
+}
+
+export async function disableTwoStepAction(input: { password: string; code: string }) {
+  const ctx = await requireContext();
+  const r = await attempt(() => disableTwoStep(ctx, input), "Two-step verification is off.");
+  refresh();
+  return r;
 }
 
 export async function logoutAction() {
@@ -202,6 +230,7 @@ export async function uploadAction(_prev: ActionResult | undefined, form: FormDa
   const r = await attempt(async () => {
     const res = await submitFile(ctx, { sourceId, filename: file.name, bytes: new Uint8Array(await file.arrayBuffer()), mediaType: file.type || undefined });
     if (res.alreadySucceeded) return { text: `"${file.name}" was already imported; nothing was added.` };
+    if (jobsRunInWorker()) return { text: `"${file.name}" is queued. It will show under Import history once the worker has processed it.` };
     const job = await runJob(res.jobId);
     if (job.status !== "succeeded") throw new Error(`Import failed: ${job.error}`);
     const c = job.result!;

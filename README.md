@@ -64,7 +64,7 @@ narrative and OpenAI voice adapters are implemented but have not been run agains
 ## Tests
 
 ```bash
-npm test                         # 87 tests on PostgreSQL (or: npm run test:pglite)
-npm run test:e2e -- --trace off  # 13 browser tests against a production build
+npm test                         # 91 tests on PostgreSQL (or: npm run test:pglite)
+npm run test:e2e -- --trace off  # 14 browser tests against a production build
 npm run eval                     # 30-case answer key, 14 adversarial
 ```

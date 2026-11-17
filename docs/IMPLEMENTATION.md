@@ -1,6 +1,6 @@
 # Implementation status
 
-As of 2026-11-16. Synthetic data only.
+As of 2026-11-17. Synthetic data only.
 
 ## Verified in this build
 
@@ -8,9 +8,9 @@ As of 2026-11-16. Synthetic data only.
 |---|---|---|
 | Type-check | `npm run typecheck` | clean |
 | Lint | `npm run lint` | clean |
-| Unit + integration | `npm test` (PostgreSQL 16.15) | 87 / 87 |
-| Same suite, embedded engine | `npm run test:pglite` | 87 / 87 |
-| Browser end-to-end, production build | `npm run test:e2e -- --trace off` | 13 / 13 |
+| Unit + integration | `npm test` (PostgreSQL 16.15) | 91 / 91 |
+| Same suite, embedded engine | `npm run test:pglite` | 91 / 91 |
+| Browser end-to-end, production build | `npm run test:e2e -- --trace off` | 14 / 14 |
 | Answer-key evaluation | `npm run reset && npm run eval` | 30 / 30 cases, 212 / 212 checks, 14 / 14 adversarial |
 | Seed / import | `npm run reset` | 62 files in about 3 s; 1 file fails by design |
 
@@ -36,6 +36,12 @@ organization exist for isolation tests.
 - Data & Privacy: source pause/disconnect, AI provider policy by task and record class,
   retention settings, ingestion scope, proposed-then-approved archival and disposal with
   legal-hold protection and propagation, export with manifest, hash-chained audit log
+- Two-step verification (authenticator app): set-up with QR code from the account page,
+  required at sign-in once on, password and code needed to turn off, audited
+- Import worker: optional separate process, atomic job claiming, recovery of interrupted jobs
+- Retention review: records past their class's period are flagged with legal-hold counts and a
+  one-click archival proposal; removal still needs explicit approval
+- Continuous integration workflow (type-check, lint, both test engines, browser tests)
 - Works on PostgreSQL 16 and on embedded PGlite
 
 ## Simulated (works end to end, but stands in for something external)
@@ -61,9 +67,10 @@ organization exist for isolation tests.
 - Jev (TypeSafe) and OpenAI Decisions classifiers, and the comparison the brief asks for (APIs could not be verified; see `AI_PROVIDER_EVALUATION.md`)
 - Semantic / vector search
 - Interpretation of images, audio or video content; OCR for scanned PDFs
-- Row-level security in the database; SSO; MFA enrolment screen (TOTP verification exists)
-- A separate job worker and scheduler (jobs run inline)
-- Automatic retention enforcement; backup handling
+- Row-level security in the database; SSO; organization-wide enforcement of two-step verification,
+  recovery codes, and encryption of the two-step secret at rest
+- A scheduler for connector syncs (imports run inline or through `npm run worker`)
+- Automatic retention enforcement (by design: flagged for review, never auto-removed); backup handling
 - Resident-facing access; real email delivery
 
 ## Known limitations worth knowing before a demo
@@ -95,4 +102,4 @@ organization exist for isolation tests.
 2. Model-assisted typed extraction behind the existing interface, scored against the rules baseline.
 3. One real connector end to end (Microsoft 365 shared mailbox via Graph delta) with a pilot
    customer's written authorization.
-4. Row-level security, a job worker, and the remaining launch-gate items in `PRIVACY_SECURITY.md`.
+4. Row-level security and the remaining launch-gate items in `PRIVACY_SECURITY.md`.

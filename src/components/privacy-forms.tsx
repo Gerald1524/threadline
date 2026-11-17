@@ -53,16 +53,24 @@ export function ProviderRow({ task, label, selected, allowed, options, classes, 
   );
 }
 
-export function RetentionRow({ recordClass, label, days, active, archived, disposed, editable }: { recordClass: string; label: string; days: number | null; active: number; archived: number; disposed: number; editable: boolean }) {
+export function RetentionRow({ recordClass, label, days, active, archived, disposed, editable, eligible, held, cutoffDate }: { recordClass: string; label: string; days: number | null; active: number; archived: number; disposed: number; editable: boolean; eligible?: number; held?: number; cutoffDate?: string }) {
   const [value, setValue] = useState(days === null ? "" : String(days));
   const { pending, result, run } = useAction();
   const dirty = value !== (days === null ? "" : String(days));
   return (
-    <div className="flex flex-wrap items-center gap-3 px-5 py-3 text-sm">
-      <div className="min-w-0 flex-1"><p className="font-medium text-stone-900">{label}</p><p className="text-xs text-stone-500">{active} active{archived ? ` · ${archived} archived` : ""}{disposed ? ` · ${disposed} disposed` : ""}</p></div>
-      <label className="flex items-center gap-1.5 text-xs text-stone-600">Keep<input aria-label={`Retention days for ${label}`} className={`${inputCls} w-24`} inputMode="numeric" placeholder="forever" value={value} disabled={!editable} onChange={(e) => setValue(e.target.value.replace(/\D/g, ""))} />days</label>
-      {editable && dirty ? <Button size="sm" variant="primary" disabled={pending} onClick={() => run(() => updateRetentionAction({ recordClass, days: value ? Number(value) : null }))}>Save</Button> : null}
-      {!result?.ok ? <ResultNote result={result} /> : null}
+    <div className="px-5 py-3 text-sm" data-testid={`retention-${recordClass}`}>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-0 flex-1"><p className="font-medium text-stone-900">{label}</p><p className="text-xs text-stone-500">{active} active{archived ? ` · ${archived} archived` : ""}{disposed ? ` · ${disposed} disposed` : ""}</p></div>
+        <label className="flex items-center gap-1.5 text-xs text-stone-600">Keep<input aria-label={`Retention days for ${label}`} className={`${inputCls} w-24`} inputMode="numeric" placeholder="forever" value={value} disabled={!editable} onChange={(e) => setValue(e.target.value.replace(/\D/g, ""))} />days</label>
+        {editable && dirty ? <Button size="sm" variant="primary" disabled={pending} onClick={() => run(() => updateRetentionAction({ recordClass, days: value ? Number(value) : null }))}>Save</Button> : null}
+      </div>
+      {eligible && cutoffDate ? (
+        <p className="mt-2 flex flex-wrap items-center gap-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900" data-testid="retention-eligible">
+          <span className="flex-1">{eligible} record{eligible === 1 ? " is" : "s are"} past this period{held ? ` (${held} protected by a legal hold)` : ""}. Nothing is removed until a proposal is approved below.</span>
+          {editable ? <Button size="sm" disabled={pending} onClick={() => run(() => proposeLifecycleAction({ action: "archive", recordClass, olderThanDate: cutoffDate }))}>Propose archival</Button> : null}
+        </p>
+      ) : null}
+      <ResultNote result={result} />
     </div>
   );
 }

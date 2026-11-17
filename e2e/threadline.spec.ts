@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { totpCode } from "../src/lib/auth/password";
 import { SMOKE_Q, ask, signIn, stubSpeech } from "./helpers";
 
 /**
@@ -244,4 +245,42 @@ test("another organization sees only its own building", async ({ page }) => {
   await expect(answer).not.toContainText("Whitfield");
   await page.goto("/cases?status=all");
   await expect(page.getByRole("row")).toHaveCount(2); // header + Calder's single case
+});
+
+test("two-step verification: set up from the account page, required at sign-in, then turned off", async ({ page }) => {
+  await signIn(page, "u_dmitri");
+  await page.getByTestId("current-user").click();
+  await expect(page.getByRole("heading", { name: "Your account" })).toBeVisible();
+  await page.getByTestId("two-step-start").click();
+  const secret = (await page.getByTestId("two-step-secret").innerText()).trim();
+  expect(secret).toMatch(/^[A-Z2-7]{20}$/);
+  await expect(page.getByRole("img", { name: "QR code for your authenticator app" }).locator("svg")).toBeVisible();
+  await page.getByTestId("two-step-code").fill("000000");
+  await page.getByTestId("two-step-confirm").click();
+  await expect(page.getByRole("alert").filter({ hasText: "does not match" })).toBeVisible();
+  await page.getByTestId("two-step-code").fill(totpCode(secret));
+  await page.getByTestId("two-step-confirm").click();
+  await expect(page.getByTestId("two-step-on")).toBeVisible();
+
+  // One-click demo sign-in no longer works for this account; the code is required.
+  await page.context().clearCookies();
+  await page.goto("/login");
+  await page.getByTestId("demo-u_dmitri").click();
+  await expect(page.getByText("That account uses two-step verification")).toBeVisible();
+  await page.getByLabel("Work email").fill("dmitri.volkov@northbridge.example");
+  await page.getByLabel("Password").fill("threadline-demo");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "verification code is incorrect" })).toBeVisible();
+  await page.getByLabel("Work email").fill("dmitri.volkov@northbridge.example");
+  await page.getByLabel("Password").fill("threadline-demo");
+  await page.getByLabel("Verification code").fill(totpCode(secret));
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByTestId("current-user")).toHaveText("Dmitri Volkov");
+
+  await page.goto("/account");
+  await page.getByRole("button", { name: "Turn off…" }).click();
+  await page.getByLabel("Password").fill("threadline-demo");
+  await page.getByLabel("Current code").fill(totpCode(secret));
+  await page.getByRole("button", { name: "Turn off", exact: true }).click();
+  await expect(page.getByTestId("two-step-off")).toBeVisible();
 });
