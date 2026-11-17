@@ -31,7 +31,15 @@ const hashCodes = (codes: string[]) => codes.map((c) => hashPassword(normalizeRe
  */
 async function consumeSecondFactor(tx: Tx, u: User, code: string, atMs: number): Promise<"authenticator" | "recovery_code" | null> {
   if (!u.totpEnabled || !u.totpSecret) return null;
-  const step = matchTotpStep(openSecret(u.totpSecret, secretContext(u.id)), code, atMs);
+  let secret: string | null = null;
+  try {
+    secret = openSecret(u.totpSecret, secretContext(u.id));
+  } catch {
+    // Wrong or rotated THREADLINE_ENCRYPTION_KEY: authenticator codes cannot be checked, but
+    // recovery codes (hashed, not encrypted) still work, so the person is not locked out.
+    console.error("[two-step] stored authenticator secret could not be decrypted for a user; check THREADLINE_ENCRYPTION_KEY");
+  }
+  const step = secret === null ? null : matchTotpStep(secret, code, atMs);
   if (step !== null && (u.totpLastStep === null || step > u.totpLastStep)) {
     await tx.update(users).set({ totpLastStep: step }).where(eq(users.id, u.id));
     return "authenticator";

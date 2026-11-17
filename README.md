@@ -24,6 +24,7 @@ npm run dev                    # http://localhost:3000
 ```
 
 Sign in from the demo account list (password for all: `threadline-demo`).
+Step-by-step set-up, PostgreSQL, keys and production notes: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
 ### A five-minute tour
 
@@ -37,7 +38,9 @@ Sign in from the demo account list (password for all: `threadline-demo`).
    then as Priya, decide it under Approvals.
 6. **Sam** → Handoffs → publish; **Angela Brooks** → acknowledge.
 7. **Dana Kim (new manager)** → *"What should I know about this property?"*
-8. **Marcus Bell (admin)** → Data & Privacy: sources, AI provider policy, retention, export, audit log.
+8. **Marcus Bell (admin)** → Data & Privacy: sources, sign-in security, AI provider policy,
+   retention, export, audit log, and whether organization isolation is enforced.
+   Select your name (top right) to set up two-step verification with an authenticator app.
 9. Press the microphone on Ask (Chrome/Edge) to dictate; **Read aloud** speaks the verified answer.
 
 ## Credentials
@@ -49,6 +52,7 @@ Nothing is required. Each key below unlocks one optional capability; put them in
 |---|---|---|
 | `DATABASE_URL` | PostgreSQL 16 / Supabase | embedded PGlite under `.data/` |
 | `SESSION_SECRET` | stable sessions (required in production) | a random secret stored in `.data/` |
+| `THREADLINE_ENCRYPTION_KEY` | encryption of two-step secrets (required in production) | a random key stored in `.data/` |
 | `ANTHROPIC_API_KEY` | AI-written answer narrative (still verified claim by claim) | answers composed deterministically from records |
 | `OPENAI_API_KEY` | server-side transcription and speech | the browser's own speech recognition and synthesis |
 
@@ -64,7 +68,7 @@ narrative and OpenAI voice adapters are implemented but have not been run agains
 ## Tests
 
 ```bash
-npm test                         # 91 tests on PostgreSQL (or: npm run test:pglite)
-npm run test:e2e -- --trace off  # 14 browser tests against a production build
+npm test                         # 101 tests on PostgreSQL (or: npm run test:pglite)
+npm run test:e2e -- --trace off  # 16 browser tests against a production build
 npm run eval                     # 30-case answer key, 14 adversarial
 ```

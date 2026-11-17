@@ -13,6 +13,7 @@
     "test:pglite": "THREADLINE_TEST_ENGINE=pglite vitest run",
     "test:e2e": "playwright test",
     "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/migrate.ts",
     "data:generate": "tsx scripts/generate-data.ts",
     "seed": "tsx scripts/seed.ts",
     "reset": "tsx scripts/seed.ts --reset",

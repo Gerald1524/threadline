@@ -12,6 +12,13 @@ import { syncDueSources } from "@/lib/connectors";
 import { NOW, as, useSeededDb } from "./helpers/db";
 
 const enc = (s: string) => new TextEncoder().encode(s);
+/** Flip one byte of the ciphertext, as a changed key or a corrupted value would look. */
+const openSecretTamper = (sealed: string) => {
+  const [iv, tag, ct] = sealed.slice(3).split(".");
+  const bytes = Buffer.from(ct, "base64url");
+  bytes[0] ^= 0xff;
+  return `v1:${iv}.${tag}.${bytes.toString("base64url")}`;
+};
 const note = (n: number) => enc(`# Lobby notice ${n}\n\nThe lobby doors will be serviced on Friday morning, notice ${n}.\n`);
 
 describe("operations: import worker, two-step verification, retention review", () => {
@@ -119,6 +126,26 @@ describe("operations: import worker, two-step verification, retention review", (
     const actions = (await db.select().from(t.auditLog).where(eq(t.auditLog.orgId, "org_northbridge"))).map((a) => a.action);
     expect(actions).toEqual(expect.arrayContaining(["account.two_step_enrolment_started", "account.two_step_enabled", "account.recovery_codes_regenerated", "security.two_step_requirement_changed", "account.two_step_disabled"]));
     expect(await verifyAuditChain(db, "org_northbridge")).toMatchObject({ brokenAt: null });
+  });
+
+  it("if the stored secret cannot be decrypted (key changed), recovery codes still sign the person in", async () => {
+    const db = await getDb("system");
+    const dana = as("u_dana");
+    const at = NOW.getTime();
+    const { secret } = await beginTwoStepEnrolment(dana);
+    const { recoveryCodes } = await confirmTwoStepEnrolment(dana, totpCode(secret, at), at);
+    const [u] = await db.select().from(t.users).where(eq(t.users.id, "u_dana"));
+    await db.update(t.users).set({ totpSecret: openSecretTamper(u.totpSecret!) }).where(eq(t.users.id, "u_dana"));
+    const errors: unknown[] = [];
+    const original = console.error;
+    console.error = (...a: unknown[]) => { errors.push(a); };
+    try {
+      expect(await verifySignInSecondFactor("u_dana", totpCode(secret, at + 30_000), at + 30_000)).toBeNull();
+      expect(await verifySignInSecondFactor("u_dana", recoveryCodes[0], at + 30_000)).toBe("recovery_code");
+    } finally {
+      console.error = original;
+    }
+    expect(errors.length).toBeGreaterThan(0);
   });
 
   it("the worker's schedule syncs a due connector source once per interval, and never a paused one", async () => {

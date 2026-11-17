@@ -16,7 +16,7 @@ Browser (React 19) ── server actions / route handlers ── services ──
 |---|---|---|---|
 | Audit integrity | Triggers make `audit_log` and source content append-only inside the database, independent of application code | Enforced in function code only; no database-level immutability | High |
 | Relational, exact counts | SQL joins and aggregates over events ↔ cases ↔ claims; transactions across tables | Document model with manual joins; transactional, but aggregates are hand-rolled | High |
-| Tenant / property isolation | Scope predicates today; row-level security available as a second layer | Per-function checks only | High |
+| Tenant / property isolation | Scope predicates plus row-level security enforcing organization isolation in the database | Per-function checks only | High |
 | Searchable source text | Built-in `tsvector` full-text; `pgvector` when embeddings are approved | Built-in full-text and vector indexes (comparable) | Medium |
 | Background ingestion | Jobs table now; `pgmq`/`pg_cron` or a worker later | Scheduled functions and durable workflows built in (stronger out of the box) | Medium |
 | Export / retention / exit | Standard SQL dump; customer can run Postgres anywhere; dedicated database per customer is straightforward | Export available, but the runtime is the vendor's; customer-hosted option is limited | High |
@@ -56,7 +56,8 @@ adoption. None has been adopted. See `AI_PROVIDER_EVALUATION.md`.
 | Path | Responsibility |
 |---|---|
 | `src/lib/access.ts` | roles, capabilities, tenant/property/visibility scope predicates |
-| `src/lib/auth/` | scrypt passwords, TOTP, signed session cookie; role re-read on every request |
+| `src/lib/db/client.ts` | organization-scoped (`getDb(ctx)`, row-level security) or system database handles |
+| `src/lib/auth/` | scrypt passwords, TOTP with replay protection, recovery codes, encrypted secrets, signed session cookie; role re-read on every request |
 | `src/lib/audit.ts` | append-only, hash-chained audit trail |
 | `src/lib/ingest/` | parsers → extraction → linking → jobs (`INGESTION.md`) |
 | `src/lib/engine/` | evidence assembly, question parsing, composers, verifier, orchestrator |
@@ -69,10 +70,10 @@ adoption. None has been adopted. See `AI_PROVIDER_EVALUATION.md`.
 
 ## Tradeoffs accepted
 
-- Application-layer authorization without row-level security yet (single scoped data layer,
-  tested; RLS is a launch-gate item).
+- Row-level security enforces organization isolation only. Property and role scoping inside an
+  organization stay in the application layer (`access.ts`), where they are tested.
 - Jobs run inline by default; an optional worker process (`npm run worker`) takes them off the
-  request path. There is no scheduler for connector syncs yet.
+  request path and runs scheduled connector syncs.
 - Keyword and structured retrieval only; no embeddings (no provider approved, and the answer
   key passes without them).
 - Local-disk file store and a single app process in development.

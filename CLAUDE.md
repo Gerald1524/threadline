@@ -17,7 +17,8 @@ middleware, no `next lint`). Read `node_modules/next/dist/docs/` before changing
 | `npm run test:e2e -- --trace off` | Playwright against a production build (seeds its own database) |
 | `npm run eval` | answer-key evaluation, writes `docs/eval-results.json` (run on a fresh `npm run reset`) |
 | `npm run ask -- u_priya "question"` | ask from the terminal |
-| `npm run worker` | process queued imports outside the web process (app started with `THREADLINE_JOB_MODE=worker`) |
+| `npm run worker` | queued imports and scheduled connector syncs, outside the web process |
+| `npm run db:migrate` | apply migrations and report whether organization isolation is enforced |
 | `npm run typecheck`, `npm run lint` | must be clean before committing |
 
 Schema change: edit `src/lib/db/schema.ts`, then `npm run db:generate`. Triggers and the
@@ -34,6 +35,7 @@ full-text column live in the hand-written `drizzle/0001_integrity.sql`.
 - `docs/PRIVACY_SECURITY.md`, `docs/DPA_REQUIREMENTS.md` — data controls, threat model, launch gate
 - `docs/AI_PROVIDER_EVALUATION.md` — model/classifier choices and what was and was not verified
 - `docs/IMPLEMENTATION.md` — what is live, simulated, or needs a credential; test evidence; gaps
+- `docs/DEPLOYMENT.md` — running locally, settings, database role, keys, production requirements
 - `docs/spec/` — the product brief (source of truth for intent)
 - `.claude/skills/` — playbooks: incident intake, evidence verification, policy lookup, report generation
 
@@ -44,6 +46,10 @@ verify, ask) · `src/lib/services/` (workflows) · `src/lib/ai/` (provider bound
 
 1. **Authorization is code, not prompts.** Every service and query takes an `AccessContext` and scopes
    with `scopeOf` / `visibleScope` from `src/lib/access.ts`. Never query a tenant table without it.
+   Open the database with `getDb(ctx)`: PostgreSQL row-level security then confines the connection
+   to that organization (`drizzle/0002`). `getDb("system")` is only for work not done for one
+   organization (sign-in lookup, seeding, the job queue, tests). A new table needs its own
+   `org_isolation` policy; `tests/rls.test.ts` fails until it has one.
 2. **Originals are immutable.** `source_records` content and `audit_log` are protected by database
    triggers. A changed upstream record is a new version; a correction is a new event.
 3. **Every evidentiary claim cites a source record**, and every answer passes `engine/verify.ts`

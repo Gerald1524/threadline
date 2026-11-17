@@ -113,7 +113,8 @@ async function assertTenantRole() {
   try {
     await holder.makeTenant!("__startup_check__").execute(sql`select 1`);
   } catch (e) {
-    throw new Error(`threadline: cannot switch to the database role "${APP_ROLE}" (${(e as Error).message}). See docs/DEPLOYMENT.md, "Database".`);
+    const err = e as Error & { cause?: Error };
+    throw new Error(`threadline: cannot switch to the database role "${APP_ROLE}" (${err.cause?.message ?? err.message}). See docs/DEPLOYMENT.md, "Database".`);
   }
 }
 

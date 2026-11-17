@@ -33,9 +33,24 @@ none. Outbound messages are simulated.
   on every request, so a role change or deactivation applies immediately.
 - Every query on tenant data is scoped by organization and property; visibility by role
   (`staff` / `management` / `restricted`). Enforced in the service layer, never in prompts.
+- Organization isolation is also enforced by PostgreSQL row-level security on every table
+  (`drizzle/0002_row_level_security.sql`). Work for a signed-in person runs as the restricted
+  role `threadline_app` with that person's organization set, so a query missing its filter
+  returns and accepts nothing from another organization. That role cannot change or delete the
+  audit log or delete originals. The app refuses to start if the role cannot be used; the
+  Data & Privacy page and `/api/health` show whether isolation is enforced.
+  `tests/rls.test.ts` checks every table on both database engines.
 - Attachments and PDFs are served only through permission-checked, audited routes; no public URLs.
-- Passwords: scrypt. TOTP verification is implemented at sign-in (no enrolment screen yet).
-  Sign-in attempts are rate-limited in memory.
+- Passwords: scrypt. Two-step verification with an authenticator app (RFC 6238): set up from
+  the account page; the secret is encrypted with `THREADLINE_ENCRYPTION_KEY` (AES-256-GCM,
+  bound to the user); a code is accepted only once; ten one-time recovery codes are shown once
+  and stored as scrypt hashes. An administrator can require it for the whole organization:
+  anyone without it is sent to set it up before any page, action or API call, and nobody can
+  turn it off while it is required. One-click demo sign-in never bypasses it.
+  Sign-in attempts are rate-limited in memory (per process).
+- Pages are served with a same-origin Content-Security-Policy, `X-Content-Type-Options: nosniff`,
+  same-origin framing only, a Permissions-Policy that allows only the microphone (voice input),
+  and same-origin referrers. HTTPS and HSTS are the host's responsibility.
 - Isolation tests (`tests/permissions.test.ts`, e2e): a second organization and a second
   property cannot read cases, sources, attachments, search results, timelines, reports, exports,
   audit entries, or reach another user's conversation by id.
@@ -44,7 +59,8 @@ none. Outbound messages are simulated.
 
 | Threat | Mitigation in this build | Residual / to do |
 |---|---|---|
-| Cross-tenant or cross-property disclosure | single scoped data layer; tests across direct ids, search, timelines, reports, exports, conversations | add Postgres row-level security as a second layer |
+| Cross-tenant or cross-property disclosure | single scoped data layer; PostgreSQL row-level security for organization isolation; tests across direct ids, search, timelines, reports, exports, conversations, and unfiltered queries | property-level isolation is application-only; independent penetration test |
+| Account takeover | scrypt; optional or organization-required two-step verification; replay protection; recovery codes hashed; rate-limited sign-in | single sign-on; rate limit is per process, not shared across instances |
 | Role over-reach inside a property | capability checks in every service; visibility on records | periodic access review process |
 | Prompt injection in emails, notes, files | flagged at import; withheld from prompts; claims verified; unidentified senders only tentative | heuristics can miss novel phrasing: keep verification mandatory |
 | Sensitive information disclosure to a model vendor | provider allowlist by task and class; redaction; metadata-only request log; no silent fallback | contract review of each provider's retention and training terms |
@@ -111,13 +127,21 @@ are not certifications.
 
 ## Launch gate — all required before real data
 
-- [ ] `THREADLINE_DEMO_LOGIN=0`, real identity provider or enforced MFA, strong `SESSION_SECRET`
-      (two-step verification is available per account; it is not yet enforced organization-wide,
-      and the secret is not yet encrypted at rest)
-- [ ] Row-level security enabled; independent penetration test of tenant isolation
+Code-complete in this build (verify again in the deployed environment):
+
+- [x] Organization isolation enforced by PostgreSQL row-level security (`drizzle/0002`)
+- [x] Two-step verification with encrypted secrets, recovery codes and an organization-wide requirement
+- [x] Job worker with scheduled connector syncs (`npm run worker`)
+- [x] Security headers; unauthenticated health check that reveals no data
+
+Deployment and organizational steps:
+
+- [ ] `THREADLINE_DEMO_LOGIN=0`; `SESSION_SECRET` and `THREADLINE_ENCRYPTION_KEY` in a secret manager
+- [ ] Two-step verification required for the organization (Data & Privacy → Sign-in security), or a real identity provider
+- [ ] `/api/health` reports organization isolation enforced in the deployed database; independent penetration test of tenant isolation
 - [ ] Managed Postgres with encryption at rest, point-in-time recovery, tested restore
-- [ ] Private object storage with encryption; secret manager
-- [ ] Job worker deployed (`npm run worker`), a scheduler for connector syncs, alerting on failed imports
+- [ ] Private object storage with encryption (replace the local-disk adapter in `src/lib/storage.ts`), backed up with the database
+- [ ] Worker running in production; alerting on failed imports and on `/api/health`
 - [ ] DPA, subprocessor list and provider terms reviewed by counsel
 - [ ] Each connector's scopes approved by the customer's administrator
 - [ ] Staff-facing notice describing what is recorded and why

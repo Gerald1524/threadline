@@ -8,9 +8,11 @@ As of 2026-11-17. Synthetic data only.
 |---|---|---|
 | Type-check | `npm run typecheck` | clean |
 | Lint | `npm run lint` | clean |
-| Unit + integration | `npm test` (PostgreSQL 16.15) | 91 / 91 |
-| Same suite, embedded engine | `npm run test:pglite` | 91 / 91 |
-| Browser end-to-end, production build | `npm run test:e2e -- --trace off` | 14 / 14 |
+| Unit + integration | `npm test` (PostgreSQL 16.15) | 101 / 101 |
+| Same suite, embedded engine | `npm run test:pglite` | 101 / 101 |
+| Same suite, non-superuser database owner (fresh cluster, as on managed hosts) | `TEST_DATABASE_URL=… npm test` | 101 / 101 |
+| Browser end-to-end, production build | `npm run test:e2e -- --trace off` | 16 / 16 |
+| Continuous integration (GitHub Actions: all of the above except the evaluation) | push to `main` | passing |
 | Answer-key evaluation | `npm run reset && npm run eval` | 30 / 30 cases, 212 / 212 checks, 14 / 14 adversarial |
 | Seed / import | `npm run reset` | 62 files in about 3 s; 1 file fails by design |
 
@@ -36,9 +38,15 @@ organization exist for isolation tests.
 - Data & Privacy: source pause/disconnect, AI provider policy by task and record class,
   retention settings, ingestion scope, proposed-then-approved archival and disposal with
   legal-hold protection and propagation, export with manifest, hash-chained audit log
+- Organization isolation enforced by PostgreSQL row-level security on every table, on both
+  engines; restricted runtime role; start-up refuses to run without it; status shown on
+  Data & Privacy and `/api/health`
 - Two-step verification (authenticator app): set-up with QR code from the account page,
-  required at sign-in once on, password and code needed to turn off, audited
-- Import worker: optional separate process, atomic job claiming, recovery of interrupted jobs
+  secret encrypted at rest, replay protection, ten one-time recovery codes, organization-wide
+  requirement enforced for every page, action and API call; all changes audited
+- Worker: optional separate process; atomic job claiming; recovery of interrupted jobs;
+  scheduled connector syncs
+- Security headers (Content-Security-Policy and others); unauthenticated health check
 - Retention review: records past their class's period are flagged with legal-hold counts and a
   one-click archival proposal; removal still needs explicit approval
 - Continuous integration workflow (type-check, lint, both test engines, browser tests)
@@ -67,9 +75,9 @@ organization exist for isolation tests.
 - Jev (TypeSafe) and OpenAI Decisions classifiers, and the comparison the brief asks for (APIs could not be verified; see `AI_PROVIDER_EVALUATION.md`)
 - Semantic / vector search
 - Interpretation of images, audio or video content; OCR for scanned PDFs
-- Row-level security in the database; SSO; organization-wide enforcement of two-step verification,
-  recovery codes, and encryption of the two-step secret at rest
-- A scheduler for connector syncs (imports run inline or through `npm run worker`)
+- Single sign-on (SAML / OpenID Connect); shared (multi-instance) sign-in rate limiting
+- Private object storage adapter (files are on local disk under `THREADLINE_DATA_DIR`)
+- Deployment to any hosting provider (requirements in `DEPLOYMENT.md`)
 - Automatic retention enforcement (by design: flagged for review, never auto-removed); backup handling
 - Resident-facing access; real email delivery
 
@@ -94,6 +102,8 @@ organization exist for isolation tests.
 5. Canonical (sorted-key) JSON for all hashes, after PostgreSQL `jsonb` key reordering broke
    naive hashing in testing.
 6. Voice defaults to the browser; server speech only when an admin selects it.
+7. Row-level security keyed on a per-connection setting under a restricted role, rather than one
+   database user per organization: one connection pool, enforced on both engines.
 
 ## Suggested next milestone
 
@@ -102,4 +112,5 @@ organization exist for isolation tests.
 2. Model-assisted typed extraction behind the existing interface, scored against the rules baseline.
 3. One real connector end to end (Microsoft 365 shared mailbox via Graph delta) with a pilot
    customer's written authorization.
-4. Row-level security and the remaining launch-gate items in `PRIVACY_SECURITY.md`.
+4. Object storage for files, then a first hosted pilot environment (`DEPLOYMENT.md`) and the
+   remaining launch-gate items in `PRIVACY_SECURITY.md`.

@@ -18,7 +18,13 @@ BEGIN
       RAISE EXCEPTION 'Threadline needs a database role named threadline_app, and % may not create roles. Ask a database administrator to run: CREATE ROLE threadline_app NOLOGIN; GRANT threadline_app TO %;', current_user, current_user;
     END;
   END IF;
-  IF NOT pg_has_role(current_user, 'threadline_app', 'MEMBER') THEN
+  -- The app's user must be allowed to SET ROLE threadline_app. From PostgreSQL 16, a role's
+  -- creator holds it WITH ADMIN but not WITH SET, so membership alone is not enough.
+  IF current_setting('server_version_num')::int >= 160000 THEN
+    IF NOT pg_has_role(current_user, 'threadline_app', 'SET') THEN
+      EXECUTE format('GRANT threadline_app TO %I WITH SET TRUE', current_user);
+    END IF;
+  ELSIF NOT pg_has_role(current_user, 'threadline_app', 'MEMBER') THEN
     EXECUTE format('GRANT threadline_app TO %I', current_user);
   END IF;
 END $$;

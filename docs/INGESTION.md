@@ -69,5 +69,8 @@ Sheets sync that replays local fixture batches (no external service). Planned, n
 Scheduling: by default a job runs inline on submit or "Sync now". With `THREADLINE_JOB_MODE=worker`
 an upload is only queued, and `npm run worker` (one or more processes) drains the queue. Each
 job is claimed atomically, so it is processed once; a job left running by a stopped process is
-re-queued after 10 minutes, or marked failed once it has used its attempts. Scheduled calls to
-`syncSource()` for live connectors remain a deployment task.
+re-queued after 10 minutes, or marked failed once it has used its attempts. The worker also
+syncs every active connector source whose last sync is older than
+`THREADLINE_SYNC_INTERVAL_MINUTES` (default 15), claiming each source atomically; paused and
+disconnected sources are skipped. Each job is processed under its own organization's
+row-level-security scope.
