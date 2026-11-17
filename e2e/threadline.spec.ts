@@ -247,7 +247,7 @@ test("another organization sees only its own building", async ({ page }) => {
   await expect(page.getByRole("row")).toHaveCount(2); // header + Calder's single case
 });
 
-test("two-step verification: set up from the account page, required at sign-in, then turned off", async ({ page }) => {
+test("two-step verification: set up, recovery codes, required at sign-in, replay refused, turned off", async ({ page }) => {
   await signIn(page, "u_dmitri");
   await page.getByTestId("current-user").click();
   await expect(page.getByRole("heading", { name: "Your account" })).toBeVisible();
@@ -258,29 +258,80 @@ test("two-step verification: set up from the account page, required at sign-in, 
   await page.getByTestId("two-step-code").fill("000000");
   await page.getByTestId("two-step-confirm").click();
   await expect(page.getByRole("alert").filter({ hasText: "does not match" })).toBeVisible();
-  await page.getByTestId("two-step-code").fill(totpCode(secret));
+  const enrolCode = totpCode(secret);
+  await page.getByTestId("two-step-code").fill(enrolCode);
   await page.getByTestId("two-step-confirm").click();
+  await expect(page.getByTestId("recovery-code")).toHaveCount(10);
+  const codes = await page.getByTestId("recovery-code").allInnerTexts();
+  await page.getByTestId("recovery-codes-saved").click();
   await expect(page.getByTestId("two-step-on")).toBeVisible();
+  await expect(page.getByTestId("recovery-codes-left")).toHaveText("10 recovery codes left.");
 
-  // One-click demo sign-in no longer works for this account; the code is required.
+  // One-click demo sign-in no longer works for this account; a second factor is required.
   await page.context().clearCookies();
   await page.goto("/login");
   await page.getByTestId("demo-u_dmitri").click();
   await expect(page.getByText("That account uses two-step verification")).toBeVisible();
-  await page.getByLabel("Work email").fill("dmitri.volkov@northbridge.example");
-  await page.getByLabel("Password").fill("threadline-demo");
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  const signInWith = async (code: string) => {
+    await page.getByLabel("Work email").fill("dmitri.volkov@northbridge.example");
+    await page.getByLabel("Password").fill("threadline-demo");
+    await page.getByLabel("Verification code").fill(code);
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  };
+  await signInWith(enrolCode); // already used once: refused
   await expect(page.getByRole("alert").filter({ hasText: "verification code is incorrect" })).toBeVisible();
-  await page.getByLabel("Work email").fill("dmitri.volkov@northbridge.example");
-  await page.getByLabel("Password").fill("threadline-demo");
-  await page.getByLabel("Verification code").fill(totpCode(secret));
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await signInWith(codes[0]); // a recovery code works once
   await expect(page.getByTestId("current-user")).toHaveText("Dmitri Volkov");
 
   await page.goto("/account");
+  await expect(page.getByTestId("recovery-codes-left")).toHaveText("9 recovery codes left.");
   await page.getByRole("button", { name: "Turn off…" }).click();
   await page.getByLabel("Password").fill("threadline-demo");
-  await page.getByLabel("Current code").fill(totpCode(secret));
+  await page.getByLabel("Current code").fill(totpCode(secret, Date.now() + 30_000));
   await page.getByRole("button", { name: "Turn off", exact: true }).click();
   await expect(page.getByTestId("two-step-off")).toBeVisible();
+});
+
+test("an administrator can require two-step verification for everyone", async ({ page }) => {
+  await signIn(page, "u_marcus");
+  await page.goto("/settings");
+  const panel = page.getByTestId("two-step-requirement");
+  await expect(panel).toContainText("Optional");
+  await expect(page.getByTestId("isolation-status")).toContainText("enforced by the database");
+  await panel.getByTestId("toggle-two-step-requirement").click();
+  await expect(panel.getByRole("alert")).toContainText("your own account first");
+
+  await page.goto("/account");
+  await page.getByTestId("two-step-start").click();
+  const secret = (await page.getByTestId("two-step-secret").innerText()).trim();
+  await page.getByTestId("two-step-code").fill(totpCode(secret));
+  await page.getByTestId("two-step-confirm").click();
+  await page.getByTestId("recovery-codes-saved").click();
+  await expect(page.getByTestId("two-step-on")).toBeVisible();
+  await page.goto("/settings");
+  await panel.getByTestId("toggle-two-step-requirement").click();
+  await expect(panel).toContainText("Required for everyone");
+
+  // Someone without it is sent to set it up before anything else, pages and API alike.
+  await page.context().clearCookies();
+  await page.goto("/login");
+  await page.getByTestId("demo-u_angela").click();
+  await page.waitForURL(/\/account\?required=1/);
+  await expect(page.getByTestId("two-step-required")).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Primary" }).getByRole("link")).toHaveCount(0);
+  await page.goto("/cases");
+  await page.waitForURL(/\/account\?required=1/);
+  expect((await page.request.get("/api/source/sr_any")).status()).toBe(403);
+
+  // Restore the demo: sign back in as the administrator, with a code, and stop requiring it.
+  await page.context().clearCookies();
+  await page.goto("/login");
+  await page.getByLabel("Work email").fill("marcus.bell@northbridge.example");
+  await page.getByLabel("Password").fill("threadline-demo");
+  await page.getByLabel("Verification code").fill(totpCode(secret, Date.now() + 30_000));
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByTestId("current-user")).toHaveText("Marcus Bell");
+  await page.goto("/settings");
+  await panel.getByTestId("toggle-two-step-requirement").click();
+  await expect(panel).toContainText("Optional");
 });

@@ -15,6 +15,20 @@
       "when": 1794828330667,
       "tag": "0001_integrity",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794951036219,
+      "tag": "0002_row_level_security",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794951383080,
+      "tag": "0003_two_step_hardening",
+      "breakpoints": true
     }
   ]
 }

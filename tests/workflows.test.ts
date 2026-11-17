@@ -18,7 +18,7 @@ const KEY_Q = "What's happening with Carter's replacement key?";
 describe("workflows: approvals, work orders, messages, handoffs, intake", () => {
   useSeededDb();
   const priya = as("u_priya"), michael = as("u_michael"), luis = as("u_luis"), sam = as("u_sam"), angela = as("u_angela"), marcus = as("u_marcus");
-  const caseByNumber = async (n: string) => (await (await getDb()).select().from(t.cases).where(and(eq(t.cases.propertyId, "prop_riverside"), eq(t.cases.number, n))))[0];
+  const caseByNumber = async (n: string) => (await (await getDb("system")).select().from(t.cases).where(and(eq(t.cases.propertyId, "prop_riverside"), eq(t.cases.number, n))))[0];
 
   it("key request: update request -> maintenance ETA -> the answer and the case reflect the new state", async () => {
     const before = (await ask(michael, { question: KEY_Q }, { now: NOW })).answer;
@@ -37,7 +37,7 @@ describe("workflows: approvals, work orders, messages, handoffs, intake", () => 
     await updateDraft(michael, { id: d1.id, subject: d1.subject, body: `${d1.body}\n\nHe leaves Tuesday at 6am.` });
     expect((await sendMessage(michael, { id: d1.id })).sent).toBe(true);
     expect((await sendMessage(michael, { id: d1.id })).sent).toBe(false);
-    const db = await getDb();
+    const db = await getDb("system");
     const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(t.events).where(and(eq(t.events.type, "maintenance_update_request"), eq(t.events.workOrderId, action.workOrderId!)));
     expect(n).toBe(1);
 
@@ -110,7 +110,7 @@ describe("workflows: approvals, work orders, messages, handoffs, intake", () => 
     expect(after.facts.find((f) => f.key === "tentative")?.n).toBe(1);
     expect(after.sources.some((s) => s.externalId === "FD-1030-04")).toBe(false);
     // Manual association of the unidentified-caller noise report with the 6E case.
-    const db = await getDb();
+    const db = await getDb("system");
     const [ev] = await db.select({ e: t.events }).from(t.events).innerJoin(t.sourceRecords, eq(t.sourceRecords.id, t.events.sourceRecordId)).where(eq(t.sourceRecords.externalId, "TC-0049"));
     await setEventLink(priya, { caseId: (await caseByNumber("C-1006")).id, eventId: ev.e.id, decision: "confirmed" });
     const noise = (await ask(priya, { question: "What do we know about the noise complaints from 5E about 6E?" }, { now: NOW })).answer;
@@ -118,7 +118,7 @@ describe("workflows: approvals, work orders, messages, handoffs, intake", () => 
   });
 
   it("corrections are appended and the original entry is untouched", async () => {
-    const db = await getDb();
+    const db = await getDb("system");
     const [orig] = await db.select({ e: t.events, sr: t.sourceRecords }).from(t.events).innerJoin(t.sourceRecords, eq(t.sourceRecords.id, t.events.sourceRecordId)).where(eq(t.sourceRecords.externalId, "FD-1019-12"));
     const res = await addCorrection(michael, { eventId: orig.e.id, text: "Correction: Frank went up at 6:55pm, not 6:50pm, per his own note." });
     const [after] = await db.select().from(t.sourceRecords).where(eq(t.sourceRecords.id, orig.sr.id));
@@ -156,7 +156,7 @@ describe("workflows: approvals, work orders, messages, handoffs, intake", () => 
   });
 
   it("every workflow step above is in the audit trail and the hash chain is intact", async () => {
-    const db = await getDb();
+    const db = await getDb("system");
     const actions = new Set((await db.select({ a: t.auditLog.action }).from(t.auditLog).where(eq(t.auditLog.orgId, "org_northbridge"))).map((r) => r.a));
     for (const a of ["message.drafted", "message.sent", "work_order.updated", "work_order.created", "approval.requested", "approval.approved", "approval.denied", "review.resolved", "case.link_confirmed", "event.correction_added", "handoff.published", "handoff.acknowledged", "intake.recorded", "ask.answered", "ingest.succeeded", "legal_hold.placed"]) expect(actions.has(a), a).toBe(true);
     expect(await verifyAuditChain(db, "org_northbridge")).toMatchObject({ brokenAt: null });

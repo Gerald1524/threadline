@@ -3,7 +3,7 @@ import "./_env";
 import { sql } from "drizzle-orm";
 import { closeDb, getDb } from "../src/lib/db/client";
 
-const db = await getDb();
+const db = await getDb("system");
 const q = async (s: ReturnType<typeof sql>) => (await db.execute(s)).rows as Record<string, unknown>[];
 const arg = process.argv[2];
 if (!arg) {

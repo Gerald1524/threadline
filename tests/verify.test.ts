@@ -29,13 +29,13 @@ describe("claim verification of model narratives (scripted model)", () => {
     expect(answer.claims).toHaveLength(2);
     expect(answer.withheld).toHaveLength(0);
     expect(answer.facts.find((f) => f.key === "complaints")?.n).toBe(10); // facts still come from Threadline
-    const db = await getDb();
+    const db = await getDb("system");
     const logs = await db.select().from(t.providerRequests).where(eq(t.providerRequests.orgId, "org_northbridge"));
     expect(logs.at(-1)).toMatchObject({ status: "ok", model: "scripted-test-model", inputTokens: 100, outputTokens: 50 });
   });
 
   it("withholds fabricated dates, counts, names, quotes and unsupported confirmation", async () => {
-    const db = await getDb();
+    const db = await getDb("system");
     const [foreign] = await db.select().from(t.sourceRecords).where(and(eq(t.sourceRecords.orgId, "org_harborview"), eq(t.sourceRecords.kind, "email")));
     setNarratorForTests(async (_ctx, _q, draft) => ({ ...base, headline: "Summary", claims: [
       { text: "Carlos Mendez checked on Oct 5 and found no smoke smell in the hallway.", classification: "staff_observation", sourceIds: [id(draft, "FD-1005-08")] }, // true

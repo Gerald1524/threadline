@@ -21,7 +21,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   if (await getContext()) redirect("/");
   const twoStep = (await searchParams).twostep === "1";
   const demo = process.env.THREADLINE_DEMO_LOGIN !== "0";
-  const db = await getDb();
+  // The demo account list spans every synthetic organization; nobody is signed in yet.
+  const db = await getDb("system");
   const rows = demo
     ? await db.select({ u: users, m: memberships, org: organizations.name, prop: properties.name }).from(users).innerJoin(memberships, eq(memberships.userId, users.id)).innerJoin(organizations, eq(organizations.id, users.orgId)).leftJoin(properties, eq(properties.id, memberships.propertyId))
     : [];

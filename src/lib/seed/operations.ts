@@ -18,7 +18,7 @@ const at = (local: string) => zonedToUtc(local.slice(0, 10), local.slice(11), TZ
 const P = "prop_riverside";
 
 export async function seedOperations() {
-  const db = await getDb();
+  const db = await getDb("system");
   const caseFor = async (category: string, unit: string, year = "2026") => {
     const rows = await db.select().from(t.cases).where(and(eq(t.cases.propertyId, P), eq(t.cases.category, category), eq(t.cases.unitId, unitId(P, unit))));
     return rows.find((c) => c.openedAt.toISOString().startsWith(year))!;

@@ -9,19 +9,19 @@ import { revalidatePath } from "next/cache";
 import QRCode from "qrcode";
 import { redirect } from "next/navigation";
 import { attempt, type ActionResult } from "@/lib/action-result";
-import { verifyPassword, verifyTotp } from "@/lib/auth/password";
+import { verifyPassword } from "@/lib/auth/password";
 import { createSession, destroySession, listAccessibleProperties, requireContext } from "@/lib/auth/session";
 import { syncSource } from "@/lib/connectors";
 import { getDb } from "@/lib/db/client";
 import { users, type HandoffItem } from "@/lib/db/schema";
 import { jobsRunInWorker, retryJob, runJob, submitFile } from "@/lib/ingest/pipeline";
-import { beginTwoStepEnrolment, confirmTwoStepEnrolment, disableTwoStep } from "@/lib/services/account";
+import { beginTwoStepEnrolment, confirmTwoStepEnrolment, disableTwoStep, regenerateRecoveryCodes, verifySignInSecondFactor } from "@/lib/services/account";
 import { decideApproval, requestApproval } from "@/lib/services/approvals";
 import { addCorrection, setCaseStatus, setEventLink, type CaseStatus } from "@/lib/services/cases";
 import { acknowledgeHandoff, publishHandoff } from "@/lib/services/handoffs";
 import { confirmIntake, previewIntake, type IntakeInput } from "@/lib/services/intake";
 import { discardDraft, draftMessage, sendMessage, updateDraft, type MessageKind } from "@/lib/services/messages";
-import { decideLifecycle, exportOrganization, placeLegalHold, proposeLifecycle, releaseLegalHold, setExcludedSensitivity, setSourceStatus, updateProviderPolicy, updateRetention } from "@/lib/services/privacy";
+import { decideLifecycle, exportOrganization, placeLegalHold, setTwoStepRequirement, proposeLifecycle, releaseLegalHold, setExcludedSensitivity, setSourceStatus, updateProviderPolicy, updateRetention } from "@/lib/services/privacy";
 import { generatePacket } from "@/lib/services/reports";
 import { resolveReview, type ReviewDecision } from "@/lib/services/review";
 import { updateWorkOrder, type WoStatus } from "@/lib/services/workorders";
@@ -41,9 +41,12 @@ export async function loginAction(_prev: { error?: string } | undefined, form: F
   const code = String(form.get("code") ?? "");
   const a = attempts.get(email);
   if (a && a.n >= 5 && a.until > Date.now()) return { error: "Too many attempts. Try again in a few minutes." };
-  const db = await getDb();
+  // Sign-in looks a person up by email before their organization is known.
+  const db = await getDb("system");
   const [user] = await db.select().from(users).where(eq(users.email, email));
-  const ok = !!user && user.active && verifyPassword(password, user.passwordHash) && (!user.totpEnabled || (!!user.totpSecret && verifyTotp(user.totpSecret, code)));
+  const passwordOk = !!user && user.active && verifyPassword(password, user.passwordHash);
+  // The second factor is checked (and a code spent) only after the password is right.
+  const ok = passwordOk && (!user.totpEnabled || !!(await verifySignInSecondFactor(user.id, code)));
   if (!ok) {
     attempts.set(email, { n: (a && a.until > Date.now() ? a.n : 0) + 1, until: Date.now() + 10 * 60_000 });
     return { error: user?.totpEnabled ? "Email, password or verification code is incorrect." : "Email or password is incorrect." };
@@ -69,8 +72,10 @@ export async function demoLoginAction(form: FormData) {
 
 // ---------------------------------------------------------------- account
 
+const setup = { allowTwoStepSetup: true };
+
 export async function beginTwoStepAction(): Promise<ActionResult<{ secret: string; qrSvg: string }>> {
-  const ctx = await requireContext();
+  const ctx = await requireContext(undefined, setup);
   return attempt(async () => {
     const { secret, uri } = await beginTwoStepEnrolment(ctx);
     return { secret, qrSvg: await QRCode.toString(uri, { type: "svg", margin: 1, errorCorrectionLevel: "M" }) };
@@ -78,14 +83,21 @@ export async function beginTwoStepAction(): Promise<ActionResult<{ secret: strin
 }
 
 export async function confirmTwoStepAction(code: string) {
-  const ctx = await requireContext();
+  const ctx = await requireContext(undefined, setup);
   const r = await attempt(() => confirmTwoStepEnrolment(ctx, code), "Two-step verification is on. You will be asked for a code at your next sign-in.");
   refresh();
   return r;
 }
 
+export async function regenerateRecoveryCodesAction(code: string) {
+  const ctx = await requireContext(undefined, setup);
+  const r = await attempt(() => regenerateRecoveryCodes(ctx, code), "New recovery codes created. The old ones no longer work.");
+  refresh();
+  return r;
+}
+
 export async function disableTwoStepAction(input: { password: string; code: string }) {
-  const ctx = await requireContext();
+  const ctx = await requireContext(undefined, setup);
   const r = await attempt(() => disableTwoStep(ctx, input), "Two-step verification is off.");
   refresh();
   return r;
@@ -264,6 +276,13 @@ export async function setSourceStatusAction(input: { sourceId: string; status: "
   const r = await attempt(() => setSourceStatus(ctx, input), `Source ${input.status === "active" ? "resumed" : input.status}.`);
   refresh();
   return r.ok ? ({ ok: true, message: r.message } as ActionResult) : r;
+}
+
+export async function setTwoStepRequirementAction(required: boolean) {
+  const ctx = await requireContext();
+  const r = await attempt(() => setTwoStepRequirement(ctx, required), required ? "Two-step verification is now required. People without it will be asked to set it up." : "Two-step verification is no longer required.");
+  refresh();
+  return r;
 }
 
 export async function updateRetentionAction(input: { recordClass: string; days: number | null }) {

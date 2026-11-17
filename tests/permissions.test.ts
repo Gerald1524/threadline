@@ -26,7 +26,7 @@ describe("tenant, property and role isolation", () => {
   useSeededDb();
   const priya = as("u_priya"), helen = as("u_helen", "prop_calder"), nina = as("u_nina", "prop_annex"), michael = as("u_michael"), sam = as("u_sam"), carlos = as("u_carlos");
   const riversideSmoke = async () => {
-    const db = await getDb();
+    const db = await getDb("system");
     const [c] = await db.select().from(t.cases).where(and(eq(t.cases.propertyId, "prop_riverside"), eq(t.cases.number, "C-1001")));
     const [sr] = await db.select().from(t.sourceRecords).where(eq(t.sourceRecords.externalId, "FD-1005-07"));
     const [mail] = await db.select().from(t.sourceRecords).where(eq(t.sourceRecords.externalId, "<smoke-06@mail.riversidehouse.example>"));
@@ -36,7 +36,7 @@ describe("tenant, property and role isolation", () => {
 
   it("another organization cannot read a case, a source record, an attachment or evidence by id", async () => {
     const { c, sr, blob } = await riversideSmoke();
-    const db = await getDb();
+    const db = await getDb("system");
     expect(await getCase(helen, c.id)).toBeNull();
     expect(await getSourceRecord(helen, sr.id)).toBeNull();
     expect(await buildCaseEvidence(helen, c.id)).toBeNull();
@@ -72,7 +72,7 @@ describe("tenant, property and role isolation", () => {
     expect(await getReportPdf(helen, report.id)).toBeNull();
     await expect(generatePacket(helen, { caseId: c.id, reviewed: true })).rejects.toThrow(/not found/i);
     const exp = await exportOrganization(as("u_marcus"));
-    const db = await getDb();
+    const db = await getDb("system");
     const { bytes } = (await readBlob(db, as("u_marcus"), exp.blobId!))!;
     const data = JSON.parse(new TextDecoder().decode(bytes));
     expect(new Set(data.tables.source_records.map((r: { orgId: string }) => r.orgId))).toEqual(new Set(["org_northbridge"]));
@@ -92,7 +92,7 @@ describe("tenant, property and role isolation", () => {
 
   it("front-desk roles do not see management correspondence, and are told that records are restricted", async () => {
     const { c, mail, blob } = await riversideSmoke();
-    const db = await getDb();
+    const db = await getDb("system");
     expect(await getSourceRecord(michael, mail.id)).toBeNull();
     await expect(readBlob(db, michael, blob.id)).rejects.toThrow(AccessDenied);
     const ev = (await buildCaseEvidence(michael, c.id, NOW))!;

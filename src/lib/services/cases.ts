@@ -23,7 +23,7 @@ export class WorkflowError extends Error {}
 
 export async function listCases(ctx: AccessContext) {
   assertCan(ctx, "cases.read");
-  const db = await getDb();
+  const db = await getDb(ctx);
   const rows = await db.select({ c: cases, unit: units.label, n: sql<number>`(select count(*)::int from case_events ce where ce.case_id = ${cases.id} and ce.link_status = 'confirmed')`, last: sql<string | null>`(select max(e.occurred_at) from case_events ce join events e on e.id = ce.event_id where ce.case_id = ${cases.id} and ce.link_status = 'confirmed')` })
     .from(cases).leftJoin(units, eq(units.id, cases.unitId)).where(visibleScope(ctx, cases)).orderBy(desc(cases.openedAt));
   return rows.map((r) => ({ ...r.c, unitLabel: r.unit, eventCount: r.n, lastActivityAt: r.last ? new Date(r.last) : null }));
@@ -31,7 +31,7 @@ export async function listCases(ctx: AccessContext) {
 
 export async function getCase(ctx: AccessContext, caseId: string) {
   assertCan(ctx, "cases.read");
-  const db = await getDb();
+  const db = await getDb(ctx);
   const [c] = await db.select().from(cases).where(and(eq(cases.id, caseId), visibleScope(ctx, cases)));
   return c ?? null;
 }
@@ -39,7 +39,7 @@ export async function getCase(ctx: AccessContext, caseId: string) {
 export async function setCaseStatus(ctx: AccessContext, input: { caseId: string; status: CaseStatus; note?: string; at?: Date }) {
   assertCan(ctx, "cases.manage");
   const { caseId, status, note } = z.object({ caseId: z.string(), status: z.enum(CASE_STATUSES), note: z.string().max(1000).optional() }).parse(input);
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.transaction(async (tx) => {
     const [c] = await tx.select().from(cases).where(and(eq(cases.id, caseId), scopeOf(ctx, cases)));
     if (!c) throw new WorkflowError("Case not found");
@@ -56,7 +56,7 @@ export async function setCaseStatus(ctx: AccessContext, input: { caseId: string;
 /** Human decision on whether an event belongs to a case (confirm, reject, or add manually). */
 export async function setEventLink(ctx: AccessContext, input: { caseId: string; eventId: string; decision: "confirmed" | "rejected"; at?: Date }) {
   assertCan(ctx, "cases.manage");
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.transaction(async (tx) => {
     const [c] = await tx.select().from(cases).where(and(eq(cases.id, input.caseId), scopeOf(ctx, cases)));
     const [e] = await tx.select().from(events).where(and(eq(events.id, input.eventId), scopeOf(ctx, events)));
@@ -74,7 +74,7 @@ export async function setEventLink(ctx: AccessContext, input: { caseId: string; 
 export async function addCorrection(ctx: AccessContext, input: { eventId: string; text: string }) {
   assertCan(ctx, "activity.write");
   const { eventId, text } = z.object({ eventId: z.string(), text: z.string().trim().min(5).max(2000) }).parse(input);
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.transaction(async (tx) => {
     const [e] = await tx.select().from(events).where(and(eq(events.id, eventId), visibleScope(ctx, events)));
     if (!e) throw new WorkflowError("Event not found");
@@ -87,7 +87,7 @@ export async function addCorrection(ctx: AccessContext, input: { eventId: string
 
 export async function getSourceRecord(ctx: AccessContext, id: string) {
   assertCan(ctx, "sources.read");
-  const db = await getDb();
+  const db = await getDb(ctx);
   const [r] = await db.select().from(sourceRecords).where(and(eq(sourceRecords.id, id), visibleScope(ctx, sourceRecords)));
   return r ?? null;
 }

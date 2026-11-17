@@ -31,7 +31,7 @@ const RequestSchema = z.object({
 export async function requestApproval(ctx: AccessContext, input: z.input<typeof RequestSchema> & { at?: Date }) {
   assertCan(ctx, "approvals.request");
   const v = RequestSchema.parse(input);
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.transaction(async (tx) => {
     const [existing] = await tx.select().from(approvals).where(and(eq(approvals.orgId, ctx.orgId), eq(approvals.idempotencyKey, v.idempotencyKey)));
     if (existing) return { approval: existing, created: false };
@@ -53,7 +53,7 @@ export async function requestApproval(ctx: AccessContext, input: z.input<typeof 
 export async function decideApproval(ctx: AccessContext, input: { id: string; decision: "approved" | "denied"; note?: string; assigneeUserId?: string | null; at?: Date }) {
   assertCan(ctx, "approvals.decide");
   const v = z.object({ id: z.string(), decision: z.enum(["approved", "denied"]), note: z.string().trim().max(2000).optional() }).parse(input);
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.transaction(async (tx) => {
     const [a] = await tx.select().from(approvals).where(and(eq(approvals.id, v.id), scopeOf(ctx, approvals)));
     if (!a) throw new WorkflowError("Approval not found");
@@ -80,7 +80,7 @@ export async function decideApproval(ctx: AccessContext, input: { id: string; de
 
 export async function listApprovals(ctx: AccessContext) {
   assertCan(ctx, "approvals.read");
-  const db = await getDb();
+  const db = await getDb(ctx);
   const rows = await db.select({ a: approvals, unit: units.label, resident: residents.fullName, requester: users.fullName }).from(approvals)
     .leftJoin(units, eq(units.id, approvals.unitId)).leftJoin(residents, eq(residents.id, approvals.residentId)).leftJoin(users, eq(users.id, approvals.requestedBy))
     .where(scopeOf(ctx, approvals)).orderBy(desc(approvals.requestedAt));

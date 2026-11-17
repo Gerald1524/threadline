@@ -67,8 +67,10 @@ export const users = pgTable("users", {
   jobTitle: text("job_title").notNull(),
   employmentType: text("employment_type").notNull().default("permanent"), // permanent | temp | contractor
   passwordHash: text("password_hash").notNull(),
-  totpSecret: text("totp_secret"),
+  totpSecret: text("totp_secret"), // sealed with THREADLINE_ENCRYPTION_KEY (src/lib/auth/secrets.ts)
   totpEnabled: boolean("totp_enabled").notNull().default(false),
+  totpLastStep: integer("totp_last_step"), // last accepted 30-second step: a code is never accepted twice
+  recoveryCodes: jsonb("recovery_codes").$type<string[]>().notNull().default([]), // scrypt hashes of unused one-time codes
   active: boolean("active").notNull().default(true),
 });
 
@@ -513,6 +515,7 @@ export const orgSettings = pgTable("org_settings", {
   retention: jsonb("retention").$type<RetentionPolicy>().notNull(),
   providerPolicy: jsonb("provider_policy").$type<ProviderPolicy>().notNull(),
   excludedSensitivity: jsonb("excluded_sensitivity").$type<string[]>().notNull().default([]),
+  requireTwoStep: boolean("require_two_step").notNull().default(false),
   updatedAt: ts("updated_at").notNull().defaultNow(),
   updatedBy: text("updated_by"),
 });

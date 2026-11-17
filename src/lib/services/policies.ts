@@ -8,7 +8,7 @@ export type PolicyView = { id: string; key: string; title: string; category: str
 /** Approved versions are visible to all staff; drafts only to roles holding policies.drafts. */
 export async function listPolicies(ctx: AccessContext): Promise<PolicyView[]> {
   assertCan(ctx, "policies.read");
-  const db = await getDb();
+  const db = await getDb(ctx);
   const ps = await db.select().from(policies).where(scopeOf(ctx, policies)).orderBy(policies.title);
   const vs = await db.select().from(policyVersions).where(scopeOf(ctx, policyVersions));
   const seeDrafts = can(ctx, "policies.drafts");
@@ -26,7 +26,7 @@ export async function currentPolicyFor(ctx: AccessContext, by: { key?: string; c
 
 export async function getPolicyVersion(ctx: AccessContext, id: string) {
   assertCan(ctx, "policies.read");
-  const db = await getDb();
+  const db = await getDb(ctx);
   const [v] = await db.select().from(policyVersions).where(and(eq(policyVersions.id, id), scopeOf(ctx, policyVersions)));
   if (!v || (v.status === "draft" && !can(ctx, "policies.drafts"))) return null;
   return v;

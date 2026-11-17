@@ -49,14 +49,14 @@ export async function createWorkOrderTx(tx: Tx, ctx: AccessContext, input: NewWo
 export async function createWorkOrder(ctx: AccessContext, input: NewWorkOrder) {
   assertCan(ctx, "workorders.create");
   z.object({ title: z.string().trim().min(3).max(200), idempotencyKey: z.string().min(8) }).parse(input);
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.transaction((tx) => createWorkOrderTx(tx, ctx, input));
 }
 
 export async function updateWorkOrder(ctx: AccessContext, input: { id: string; status?: WoStatus; eta?: Date | null; assigneeUserId?: string | null; note?: string; at?: Date }) {
   assertCan(ctx, "workorders.update");
   z.object({ id: z.string(), status: z.enum(WO_STATUSES).optional(), note: z.string().max(1000).optional() }).parse(input);
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.transaction(async (tx) => {
     const [wo] = await tx.select().from(workOrders).where(and(eq(workOrders.id, input.id), scopeOf(ctx, workOrders)));
     if (!wo) throw new WorkflowError("Work order not found");
@@ -94,7 +94,7 @@ export async function updateWorkOrder(ctx: AccessContext, input: { id: string; s
 
 export async function listWorkOrders(ctx: AccessContext) {
   assertCan(ctx, "workorders.read");
-  const db = await getDb();
+  const db = await getDb(ctx);
   const rows = await db.select({ w: workOrders, unit: units.label, assignee: users.fullName }).from(workOrders)
     .leftJoin(units, eq(units.id, workOrders.unitId)).leftJoin(users, eq(users.id, workOrders.assigneeUserId)).where(scopeOf(ctx, workOrders)).orderBy(desc(workOrders.createdAt));
   return rows.map((r) => ({ ...r.w, unitLabel: r.unit, assigneeName: r.assignee }));

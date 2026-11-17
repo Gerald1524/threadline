@@ -40,6 +40,34 @@ export function totpCode(secret: string, atMs = Date.now(), step = 30): string {
 }
 
 export function verifyTotp(secret: string, code: string, atMs = Date.now()): boolean {
-  const clean = code.replace(/\s/g, "");
-  return [-1, 0, 1].some((w) => totpCode(secret, atMs + w * 30_000) === clean);
+  return matchTotpStep(secret, code, atMs) !== null;
 }
+
+/**
+ * The 30-second step a code belongs to (allowing one step of clock drift either way), or null.
+ * Callers store the step and accept only later ones, so an observed code cannot be replayed.
+ */
+export function matchTotpStep(secret: string, code: string, atMs = Date.now(), step = 30): number | null {
+  const clean = code.replace(/\s/g, "");
+  if (!/^\d{6}$/.test(clean)) return null;
+  for (const w of [-1, 0, 1]) {
+    const at = atMs + w * step * 1000;
+    if (totpCode(secret, at, step) === clean) return Math.floor(at / 1000 / step);
+  }
+  return null;
+}
+
+// ---- One-time recovery codes for when the authenticator is unavailable ----
+
+const RC = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I, O, 0 or 1
+
+/** Ten codes of 12 characters (60 bits each), shown once; only their scrypt hashes are kept. */
+export function generateRecoveryCodes(n = 10): string[] {
+  return Array.from({ length: n }, () => {
+    const chars = Array.from(randomBytes(12), (b) => RC[b % 32]).join("");
+    return `${chars.slice(0, 4)}-${chars.slice(4, 8)}-${chars.slice(8)}`;
+  });
+}
+
+export const normalizeRecoveryCode = (code: string) => code.toUpperCase().replace(/[^A-Z0-9]/g, "");
+export const looksLikeRecoveryCode = (code: string) => normalizeRecoveryCode(code).length === 12;

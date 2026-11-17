@@ -42,7 +42,7 @@ export const PROVIDER_CATALOG: Record<AiTask, { id: string; label: string; envKe
 export const keyConfigured = (envKey?: string) => !envKey || !!process.env[envKey];
 
 export async function getProviderPolicy(orgId: string) {
-  const db = await getDb();
+  const db = await getDb({ orgId });
   const [s] = await db.select().from(orgSettings).where(eq(orgSettings.orgId, orgId));
   return s?.providerPolicy ?? {};
 }
@@ -60,6 +60,6 @@ export async function authorizeProvider(ctx: AccessContext, task: AiTask, wanted
 }
 
 export async function logProviderRequest(ctx: AccessContext, r: { provider: string; task: AiTask; model?: string | null; maxSensitivity: string; status: string; inputTokens?: number | null; outputTokens?: number | null; latencyMs?: number; errorCode?: string | null }) {
-  const db = await getDb();
+  const db = await getDb(ctx);
   await db.insert(providerRequests).values({ id: newId("prq"), orgId: ctx.orgId, userId: ctx.userId, provider: r.provider, task: r.task, model: r.model ?? null, maxSensitivity: r.maxSensitivity, status: r.status, inputTokens: r.inputTokens ?? null, outputTokens: r.outputTokens ?? null, latencyMs: r.latencyMs ?? null, errorCode: r.errorCode ?? null });
 }

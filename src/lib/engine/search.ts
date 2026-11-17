@@ -29,7 +29,7 @@ export type SearchHit = { id: string; title: string; kind: string; externalId: s
 export async function searchRecords(ctx: AccessContext, question: string, limit = 8): Promise<SearchHit[]> {
   const concepts = toConcepts(question).slice(0, 12);
   if (!concepts.length) return [];
-  const db = await getDb();
+  const db = await getDb(ctx);
   const query = sql`to_tsquery('english', ${concepts.map((c) => `(${c})`).join(" | ")})`;
   const matched = sql.join(concepts.map((c) => sql`(search @@ to_tsquery('english', ${c}))::int`), sql` + `);
   const need = Math.min(2, concepts.length);

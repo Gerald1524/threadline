@@ -10,7 +10,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   return withContext(async (ctx) => {
     assertCan(ctx, "privacy.admin");
-    const db = await getDb();
+    const db = await getDb(ctx);
     const [e] = await db.select().from(exportsTable).where(and(eq(exportsTable.id, id), eq(exportsTable.orgId, ctx.orgId)));
     const b = e?.blobId ? await readBlob(db, ctx, e.blobId) : null;
     if (!b) return notFound();

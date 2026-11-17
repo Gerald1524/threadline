@@ -20,7 +20,7 @@ const SEND_CAP: Record<string, Capability> = { maintenance: "messages.send.maint
 export async function draftMessage(ctx: AccessContext, input: { kind: MessageKind; workOrderId?: string; caseId?: string; idempotencyKey: string }) {
   assertCan(ctx, "messages.draft");
   const v = z.object({ kind: z.enum(["maintenance_update_request", "resident_update"]), workOrderId: z.string().optional(), caseId: z.string().optional(), idempotencyKey: z.string().min(8) }).parse(input);
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.transaction(async (tx) => {
     const [existing] = await tx.select().from(messages).where(and(eq(messages.orgId, ctx.orgId), eq(messages.idempotencyKey, v.idempotencyKey)));
     if (existing) return existing;
@@ -75,7 +75,7 @@ export async function draftMessage(ctx: AccessContext, input: { kind: MessageKin
 export async function updateDraft(ctx: AccessContext, input: { id: string; subject: string; body: string }) {
   assertCan(ctx, "messages.draft");
   const v = z.object({ id: z.string(), subject: z.string().trim().min(1).max(300), body: z.string().trim().min(1).max(8000) }).parse(input);
-  const db = await getDb();
+  const db = await getDb(ctx);
   const [row] = await db.update(messages).set({ subject: v.subject, body: v.body, draftOrigin: "human" }).where(and(eq(messages.id, v.id), scopeOf(ctx, messages), eq(messages.status, "draft"))).returning();
   if (!row) throw new WorkflowError("Draft not found or already sent.");
   return row;
@@ -87,7 +87,7 @@ export async function updateDraft(ctx: AccessContext, input: { id: string; subje
  * the UPDATE makes a repeated click a no-op.
  */
 export async function sendMessage(ctx: AccessContext, input: { id: string; at?: Date }) {
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.transaction(async (tx) => {
     const [m] = await tx.select().from(messages).where(and(eq(messages.id, input.id), scopeOf(ctx, messages)));
     if (!m) throw new WorkflowError("Message not found");
@@ -108,13 +108,13 @@ export async function sendMessage(ctx: AccessContext, input: { id: string; at?: 
 
 export async function discardDraft(ctx: AccessContext, id: string) {
   assertCan(ctx, "messages.draft");
-  const db = await getDb();
+  const db = await getDb(ctx);
   await db.update(messages).set({ status: "discarded" }).where(and(eq(messages.id, id), scopeOf(ctx, messages), eq(messages.status, "draft")));
 }
 
 export async function listMessages(ctx: AccessContext, filter: { caseId?: string; workOrderId?: string } = {}) {
   assertCan(ctx, "messages.draft");
-  const db = await getDb();
+  const db = await getDb(ctx);
   const rows = await db.select().from(messages).where(scopeOf(ctx, messages)).orderBy(desc(messages.createdAt));
   return rows.filter((m) => (!filter.caseId || m.caseId === filter.caseId) && (!filter.workOrderId || m.workOrderId === filter.workOrderId) && m.status !== "discarded");
 }

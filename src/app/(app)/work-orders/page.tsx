@@ -11,7 +11,7 @@ import { Card, Empty, Notice, PageHeader } from "@/components/ui";
 export default async function WorkOrdersPage({ searchParams }: { searchParams: Promise<{ show?: string }> }) {
   const ctx = await requireContext("workorders.read");
   const { show } = await searchParams;
-  const db = await getDb();
+  const db = await getDb(ctx);
   const all = await listWorkOrders(ctx);
   const open = all.filter((w) => !["completed", "cancelled"].includes(w.status));
   const rows = show === "all" ? all : open;

@@ -3,7 +3,7 @@ import { requireContext } from "@/lib/auth/session";
 import { SENSITIVITY_LABEL, SENSITIVITY_ORDER } from "@/lib/ingest/lexicon";
 import { getPrivacyOverview, listAudit, retentionReview } from "@/lib/services/privacy";
 import { fmtDateTime, relative } from "@/lib/util/time";
-import { ExportPanel, LifecyclePanel, ProviderRow, RetentionRow, ScopePanel, SourceStatusButtons } from "@/components/privacy-forms";
+import { ExportPanel, LifecyclePanel, ProviderRow, RetentionRow, ScopePanel, SourceStatusButtons, TwoStepRequirementPanel } from "@/components/privacy-forms";
 import { Badge, Card, CardHeader, Notice, PageHeader, StatusBadge, td, th } from "@/components/ui";
 
 const TASK: Record<string, string> = { reasoning: "Answer narrative (reasoning)", classification: "Classification and extraction", transcription: "Speech to text", speech: "Read aloud", embeddings: "Semantic search (embeddings)" };
@@ -41,6 +41,11 @@ export default async function SettingsPage() {
               </tbody>
             </table>
           </div>
+        </Card>
+
+        <Card>
+          <CardHeader title="Sign-in security" hint="Two-step verification asks for a code from an authenticator app after the password. Each person sets it up from their account page." />
+          <TwoStepRequirementPanel required={o.twoStep.required} enabled={o.twoStep.enabled} total={o.twoStep.total} editable={admin} />
         </Card>
 
         <Card>
@@ -90,6 +95,7 @@ export default async function SettingsPage() {
             <CardHeader title="Storage and deployment" />
             <dl className="space-y-2 px-5 py-4 text-sm">
               <div><dt className="text-xs text-stone-500">Data region</dt><dd>{o.settings.dataRegion}</dd></div>
+              <div><dt className="text-xs text-stone-500">Organization isolation</dt><dd className="flex flex-wrap items-center gap-2" data-testid="isolation-status">{o.isolation.enforced ? <Badge tone="green">enforced by the database</Badge> : <Badge tone="rose">not enforced: {o.isolation.unprotected.join(", ")}</Badge>}<span className="text-xs text-stone-500">row-level security on {o.isolation.tables - o.isolation.unprotected.length} of {o.isolation.tables} tables</span></dd></div>
               <div><dt className="text-xs text-stone-500">Audit trail integrity</dt><dd className="flex items-center gap-2">{o.chain.entries} entries {o.chain.brokenAt === null ? <Badge tone="green">hash chain intact</Badge> : <Badge tone="rose">chain broken at #{o.chain.brokenAt}</Badge>}</dd></div>
               <div><dt className="text-xs text-stone-500">Purpose limitation</dt><dd>Operational recordkeeping for incidents and requests. No productivity, attendance or performance analytics are computed.</dd></div>
               <div><dt className="text-xs text-stone-500">Readiness</dt><dd>Synthetic data only. Real resident or employee data requires the launch gate in <code className="rounded bg-stone-100 px-1 text-xs">docs/PRIVACY_SECURITY.md</code> (contracts, legal review, security review).</dd></div>

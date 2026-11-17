@@ -35,7 +35,7 @@ function toRecord(ctx: AccessContext, v: z.output<typeof IntakeSchema>, now: Dat
 export async function previewIntake(ctx: AccessContext, input: IntakeInput) {
   assertCan(ctx, "activity.write");
   const v = IntakeSchema.parse(input);
-  const db = await getDb();
+  const db = await getDb(ctx);
   const dir = await loadDirectory(db, ctx.propertyId);
   const ext = extractRecord(toRecord(ctx, v, new Date()), dir, { visibility: "staff" });
   const unitLabel = (id?: string) => [...dir.units.entries()].find(([, u]) => u.id === id)?.[0] ?? null;
@@ -49,7 +49,7 @@ export async function previewIntake(ctx: AccessContext, input: IntakeInput) {
 export async function confirmIntake(ctx: AccessContext, input: IntakeInput) {
   assertCan(ctx, "activity.write");
   const v = IntakeSchema.parse(input);
-  const db = await getDb();
+  const db = await getDb(ctx);
   const [source] = await db.select().from(dataSources).where(and(scopeOf(ctx, dataSources), eq(dataSources.mode, "in_app")));
   if (!source) throw new Error("In-app source is not configured");
   const rec = toRecord(ctx, v, new Date());

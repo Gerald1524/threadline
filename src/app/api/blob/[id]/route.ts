@@ -7,7 +7,7 @@ import { readBlob } from "@/lib/storage";
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   return withContext(async (ctx) => {
-    const db = await getDb();
+    const db = await getDb(ctx);
     const b = await readBlob(db, ctx, id);
     if (!b || !b.meta.sourceRecordId) return notFound();
     await db.transaction((tx) => audit(tx, ctx, "attachment.downloaded", "blob", id, { sensitivity: b.meta.sensitivity }));

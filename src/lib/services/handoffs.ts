@@ -11,7 +11,7 @@ import { fmtDate, fmtDateTime } from "../util/time";
 /** Suggested handoff items, built from what is open right now and visible to the author. */
 export async function draftHandoffItems(ctx: AccessContext, now = new Date()): Promise<HandoffItem[]> {
   assertCan(ctx, "handoffs.write");
-  const db = await getDb();
+  const db = await getDb(ctx);
   const tz = ctx.timezone;
   const items: HandoffItem[] = [];
   const open = await db.select().from(cases).where(and(visibleScope(ctx, cases), inArray(cases.status, ["open", "investigating", "awaiting_response"])));
@@ -34,7 +34,7 @@ export async function draftHandoffItems(ctx: AccessContext, now = new Date()): P
 export async function publishHandoff(ctx: AccessContext, input: { shiftLabel: string; note?: string; items: HandoffItem[]; at?: Date }) {
   assertCan(ctx, "handoffs.write");
   const v = z.object({ shiftLabel: z.string().trim().min(2).max(80), note: z.string().trim().max(2000).optional(), items: z.array(z.object({ kind: z.enum(["case", "work_order", "approval", "note"]), refId: z.string().optional(), text: z.string().trim().min(2).max(600) })).max(30) }).parse(input);
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.transaction(async (tx) => {
     const at = input.at ?? new Date();
     const [row] = await tx.insert(handoffs).values({ id: newId("hand"), orgId: ctx.orgId, propertyId: ctx.propertyId, fromUserId: ctx.userId, shiftLabel: v.shiftLabel, note: v.note ?? "", items: v.items, createdAt: at }).returning();
@@ -46,7 +46,7 @@ export async function publishHandoff(ctx: AccessContext, input: { shiftLabel: st
 /** The incoming employee confirms they have read the handoff. One acknowledgement per person. */
 export async function acknowledgeHandoff(ctx: AccessContext, handoffId: string, at = new Date()) {
   assertCan(ctx, "handoffs.read");
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.transaction(async (tx) => {
     const [h] = await tx.select().from(handoffs).where(and(eq(handoffs.id, handoffId), scopeOf(ctx, handoffs)));
     if (!h) throw new Error("Handoff not found");
@@ -58,7 +58,7 @@ export async function acknowledgeHandoff(ctx: AccessContext, handoffId: string, 
 
 export async function listHandoffs(ctx: AccessContext, limit = 12) {
   assertCan(ctx, "handoffs.read");
-  const db = await getDb();
+  const db = await getDb(ctx);
   const rows = await db.select({ h: handoffs, from: users.fullName, title: users.jobTitle, employment: users.employmentType }).from(handoffs).leftJoin(users, eq(users.id, handoffs.fromUserId)).where(scopeOf(ctx, handoffs)).orderBy(desc(handoffs.createdAt)).limit(limit);
   const acks = rows.length ? await db.select({ a: handoffAcks, name: users.fullName }).from(handoffAcks).leftJoin(users, eq(users.id, handoffAcks.userId)).where(inArray(handoffAcks.handoffId, rows.map((r) => r.h.id))) : [];
   return rows.map((r) => ({ ...r.h, fromName: r.from, fromTitle: r.title, fromEmployment: r.employment, when: fmtDateTime(r.h.createdAt, ctx.timezone), acks: acks.filter((a) => a.a.handoffId === r.h.id).map((a) => ({ userId: a.a.userId, name: a.name, at: a.a.acknowledgedAt })) }));

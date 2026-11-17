@@ -68,7 +68,8 @@ async function upsertPolicy(tx: Tx, dir: Directory, rec: ParsedRecord, sourceRec
 
 /** Store parsed records and everything derived from them. One transaction per record. */
 export async function ingestRecords(source: Source, records: ParsedRecord[], opts: { jobId?: string; attachmentBytes?: boolean } = {}): Promise<IngestCounts> {
-  const db = await getDb();
+  // Everything derived from a source is written under that source's organization only.
+  const db = await getDb({ orgId: source.orgId });
   const counts: IngestCounts = { parsed: records.length, created: 0, updated: 0, unchanged: 0, excluded: 0, events: 0, reviews: 0 };
   const dir = await loadDirectory(db, source.propertyId);
   const coverage = await frontDeskCoverage(db, source.propertyId);
@@ -177,7 +178,7 @@ async function relinkUnlinked(db: DB, dir: Directory, propertyId: string) {
 // ---------------------------------------------------------------- jobs
 
 export async function submitFile(actor: AccessContext, input: { sourceId: string; filename: string; bytes: Uint8Array; mediaType?: string }) {
-  const db = await getDb();
+  const db = await getDb(actor);
   const [source] = await db.select().from(dataSources).where(and(eq(dataSources.id, input.sourceId), scopeOf(actor, dataSources)));
   if (!source) throw new IngestBlocked("Unknown data source for this property.");
   if (source.status !== "active") throw new IngestBlocked(`Source "${source.name}" is ${source.status}; it does not accept new records.`);
@@ -195,9 +196,11 @@ export async function submitFile(actor: AccessContext, input: { sourceId: string
 }
 
 export async function runJob(jobId: string) {
-  const db = await getDb();
+  // The queue spans organizations; the job itself is processed under its own organization.
+  const [owner] = await (await getDb("system")).select({ orgId: ingestJobs.orgId }).from(ingestJobs).where(eq(ingestJobs.id, jobId));
+  if (!owner) throw new Error(`Unknown job ${jobId}`);
+  const db = await getDb(owner);
   const [job] = await db.select().from(ingestJobs).where(eq(ingestJobs.id, jobId));
-  if (!job) throw new Error(`Unknown job ${jobId}`);
   if (job.status === "succeeded" || job.status === "running") return job;
   const [source] = await db.select().from(dataSources).where(eq(dataSources.id, job.sourceId));
   const actor = { userId: "system:ingest", userName: "Threadline ingestion", orgId: job.orgId, propertyId: job.propertyId };
@@ -244,7 +247,7 @@ export const jobsRunInWorker = () => process.env.THREADLINE_JOB_MODE === "worker
  * once it has used its attempts. Either way it stays visible; nothing is silently dropped.
  */
 export async function requeueStalledJobs(olderThanMs = 10 * 60_000, now = new Date()) {
-  const db = await getDb();
+  const db = await getDb("system"); // the queue spans organizations
   const cutoff = new Date(now.getTime() - olderThanMs);
   const rows = await db.update(ingestJobs).set({
     status: sql`case when ${ingestJobs.attempts} >= ${ingestJobs.maxAttempts} then 'failed' else 'queued' end`,
@@ -255,14 +258,14 @@ export async function requeueStalledJobs(olderThanMs = 10 * 60_000, now = new Da
 
 /** Drain queued jobs (used by the worker and by scripts). */
 export async function runQueuedJobs(limit = 50) {
-  const db = await getDb();
+  const db = await getDb("system"); // the queue spans organizations
   const queued = await db.select().from(ingestJobs).where(eq(ingestJobs.status, "queued")).orderBy(ingestJobs.createdAt).limit(limit);
   for (const j of queued) await runJob(j.id);
   return queued.length;
 }
 
 export async function retryJob(ctx: AccessContext, jobId: string) {
-  const db = await getDb();
+  const db = await getDb(ctx);
   const [job] = await db.select().from(ingestJobs).where(and(eq(ingestJobs.id, jobId), scopeOf(ctx, ingestJobs)));
   if (!job) throw new Error("Job not found");
   if (job.status !== "failed") return job;
@@ -275,7 +278,7 @@ export async function retryJob(ctx: AccessContext, jobId: string) {
 
 /** Every failed job (they stay visible until they succeed), then the most recent others. */
 export async function latestJobs(ctx: AccessContext, limit = 30) {
-  const db = await getDb();
+  const db = await getDb(ctx);
   const failed = await db.select().from(ingestJobs).where(and(scopeOf(ctx, ingestJobs), eq(ingestJobs.status, "failed"))).orderBy(desc(ingestJobs.createdAt));
   const rest = await db.select().from(ingestJobs).where(and(scopeOf(ctx, ingestJobs), ne(ingestJobs.status, "failed"))).orderBy(desc(ingestJobs.createdAt)).limit(limit);
   return [...failed, ...rest];

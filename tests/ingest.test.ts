@@ -13,7 +13,7 @@ import { ask } from "@/lib/engine/ask";
 import { NOW, as, useSeededDb } from "./helpers/db";
 
 const count = async (table: PgTable, where?: SQL) => {
-  const db = await getDb();
+  const db = await getDb("system");
   const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(table as typeof t.cases).where(where);
   return n;
 };
@@ -37,7 +37,7 @@ describe("ingestion pipeline", () => {
   });
 
   it("reads a policy out of a PDF and keeps only one approved version per policy", async () => {
-    const db = await getDb();
+    const db = await getDb("system");
     const [smoke] = await db.select({ v: t.policyVersions, sr: t.sourceRecords }).from(t.policyVersions).innerJoin(t.sourceRecords, eq(t.sourceRecords.id, t.policyVersions.sourceRecordId)).where(sql`${t.sourceRecords.filename} = 'smoke-free-policy-v3.pdf'`);
     expect(smoke.v.status).toBe("approved");
     expect(smoke.v.body).toContain("A complaint alone is not a finding of a violation");
@@ -64,7 +64,7 @@ describe("ingestion pipeline", () => {
   });
 
   it("stores an edited upstream row as a new version and keeps the original intact", async () => {
-    const db = await getDb();
+    const db = await getDb("system");
     const edited = FRONT_DESK_ROWS.filter((r) => r.id === "FD-1029-01").map((r) => ({ ...r, notes: `${r.notes} Adjusted at 2pm.` }));
     const { jobId } = await submitFile(admin, { sourceId: "src_frontdesk_log", filename: "front-desk-log-edit.csv", bytes: enc(frontDeskCsv(edited)) });
     expect((await runJob(jobId)).result).toMatchObject({ updated: 1, created: 0 });
@@ -77,7 +77,7 @@ describe("ingestion pipeline", () => {
   });
 
   it("refuses, at the database, to alter a preserved original or the audit log", async () => {
-    const db = await getDb();
+    const db = await getDb("system");
     const [sr] = await db.select().from(t.sourceRecords).where(and(P, eq(t.sourceRecords.externalId, "FD-1005-07")));
     await expect(db.update(t.sourceRecords).set({ rawText: "tampered" }).where(eq(t.sourceRecords.id, sr.id))).rejects.toThrow();
     await expect(db.delete(t.sourceRecords).where(eq(t.sourceRecords.id, sr.id))).rejects.toThrow();
@@ -86,7 +86,7 @@ describe("ingestion pipeline", () => {
   });
 
   it("keeps a failed import visible and retryable", async () => {
-    const db = await getDb();
+    const db = await getDb("system");
     const [job] = await db.select().from(t.ingestJobs).where(eq(t.ingestJobs.status, "failed"));
     expect(job.filename).toBe("temp-coverage-log (copy 2).xlsx");
     expect(job.error).toMatch(/Could not open workbook/);
@@ -105,7 +105,7 @@ describe("ingestion pipeline", () => {
   });
 
   it("flags instruction-like text, unknown senders, health information and uncertain identity for human review", async () => {
-    const db = await getDb();
+    const db = await getDb("system");
     const items = await db.select({ type: t.reviewItems.type, ext: t.sourceRecords.externalId, status: t.reviewItems.status }).from(t.reviewItems).innerJoin(t.sourceRecords, eq(t.sourceRecords.id, t.reviewItems.sourceRecordId)).where(eq(t.reviewItems.propertyId, "prop_riverside"));
     const has = (type: string, ext: string) => items.some((i) => i.type === type && i.ext === ext);
     expect(has("suspected_injection", "<smoke-11@mail.riversidehouse.example>")).toBe(true);
@@ -122,7 +122,7 @@ describe("ingestion pipeline", () => {
   });
 
   it("keeps event time, record time and shift coverage separate", async () => {
-    const db = await getDb();
+    const db = await getDb("system");
     const rows = await db.select({ e: t.events }).from(t.events).innerJoin(t.sourceRecords, eq(t.sourceRecords.id, t.events.sourceRecordId)).where(and(eq(t.sourceRecords.externalId, "FD-1113-01"), eq(t.events.status, "active"))).orderBy(t.events.occurredAt);
     expect(rows.map((r) => r.e.type)).toEqual(["complaint_report", "investigation"]);
     expect(rows[0].e.occurredAt.toISOString()).toBe("2026-11-13T04:30:00.000Z"); // Nov 12, 11:30 PM EST

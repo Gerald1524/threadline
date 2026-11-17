@@ -61,6 +61,8 @@ export type AccessContext = {
   timezone: string;
   role: Role;
   employmentType: string;
+  /** The organization requires two-step verification and this person has not set it up. */
+  mustEnrollTwoStep?: boolean;
 };
 
 export class AccessDenied extends Error {

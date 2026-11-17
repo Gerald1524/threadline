@@ -18,7 +18,7 @@ export async function preparePacket(ctx: AccessContext, caseId: string, now = ne
   assertCan(ctx, "reports.generate");
   const ev = await buildCaseEvidence(ctx, caseId, now);
   if (!ev) return null;
-  const db = await getDb();
+  const db = await getDb(ctx);
   const draft = composeCaseOverview(ctx, ev);
   const dir = await loadDirectory(db, ctx.propertyId);
   const checked = await verifyClaims(ctx, draft.claims, { facts: draft.facts, timeline: draft.timeline, staffNames: dir.staff.map((s) => s.fullName), directObservation: ev.direct.length > 0 });
@@ -44,7 +44,7 @@ export async function generatePacket(ctx: AccessContext, input: { caseId: string
   if (!data) throw new WorkflowError("Case not found");
   data.reviewNote = v.reviewNote ?? "";
   const pdf = await renderPacket(data);
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.transaction(async (tx) => {
     const id = newId("rep");
     const blob = await putBlob(tx, { orgId: ctx.orgId, propertyId: ctx.propertyId, filename: `${data.caseNumber}-case-packet-${data.generatedAt.slice(0, 10)}-${id.slice(-5)}.pdf`, mediaType: "application/pdf", bytes: pdf, sensitivity: "confidential_case" });
@@ -57,14 +57,14 @@ export async function generatePacket(ctx: AccessContext, input: { caseId: string
 
 export async function listReports(ctx: AccessContext) {
   assertCan(ctx, "reports.read");
-  const db = await getDb();
+  const db = await getDb(ctx);
   const rows = await db.select({ r: reports, number: cases.number, caseTitle: cases.title, by: users.fullName }).from(reports).leftJoin(cases, eq(cases.id, reports.caseId)).leftJoin(users, eq(users.id, reports.generatedBy)).where(scopeOf(ctx, reports)).orderBy(desc(reports.generatedAt));
   return rows.map((x) => ({ ...x.r, caseNumber: x.number, caseTitle: x.caseTitle, generatedByName: x.by }));
 }
 
 export async function getReportPdf(ctx: AccessContext, reportId: string) {
   assertCan(ctx, "reports.read");
-  const db = await getDb();
+  const db = await getDb(ctx);
   const [r] = await db.select().from(reports).where(and(eq(reports.id, reportId), scopeOf(ctx, reports)));
   if (!r?.pdfBlobId) return null;
   const blob = await readBlob(db, ctx, r.pdfBlobId);

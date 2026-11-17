@@ -7,6 +7,7 @@ import { getContext } from "./auth/session";
 export async function withContext(fn: (ctx: AccessContext) => Promise<Response>): Promise<Response> {
   const ctx = await getContext();
   if (!ctx) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+  if (ctx.mustEnrollTwoStep) return NextResponse.json({ error: "Set up two-step verification first (Your account)." }, { status: 403 });
   try {
     return await fn(ctx);
   } catch (e) {

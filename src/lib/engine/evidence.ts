@@ -24,7 +24,7 @@ export type Lookups = {
 };
 
 export async function loadLookups(ctx: AccessContext): Promise<Lookups> {
-  const db = await getDb();
+  const db = await getDb(ctx);
   const us = await db.select().from(t.users).where(eq(t.users.orgId, ctx.orgId));
   const units = await db.select().from(t.units).where(scopeOf(ctx, t.units));
   const res = await db.select().from(t.residents).where(scopeOf(ctx, t.residents));
@@ -42,7 +42,7 @@ export async function loadLookups(ctx: AccessContext): Promise<Lookups> {
 
 /** Build timeline items (with claims, attribution and source refs) for a set of visible events. */
 export async function buildItems(ctx: AccessContext, L: Lookups, evs: EventRow[], links: Map<string, { status: string; rationale: string }> = new Map()) {
-  const db = await getDb();
+  const db = await getDb(ctx);
   if (!evs.length) return { items: [] as TimelineItem[], sources: [] as SourceRef[] };
   const ids = evs.map((e) => e.id);
   const srIds = [...new Set(evs.map((e) => e.sourceRecordId))];
@@ -87,7 +87,7 @@ export async function buildItems(ctx: AccessContext, L: Lookups, evs: EventRow[]
 export type CaseEvidence = NonNullable<Awaited<ReturnType<typeof buildCaseEvidence>>>;
 
 export async function buildCaseEvidence(ctx: AccessContext, caseId: string, now = new Date()) {
-  const db = await getDb();
+  const db = await getDb(ctx);
   const tz = ctx.timezone;
   const [c] = await db.select().from(t.cases).where(and(eq(t.cases.id, caseId), visibleScope(ctx, t.cases)));
   if (!c) return null;
@@ -254,6 +254,6 @@ export async function buildCaseEvidence(ctx: AccessContext, caseId: string, now 
 
 /** Cases visible to the caller that involve a unit (as subject or as the complainant's unit). */
 export async function casesForUnit(ctx: AccessContext, unitId: string) {
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.select().from(t.cases).where(and(visibleScope(ctx, t.cases), or(eq(t.cases.unitId, unitId), eq(t.cases.complainantUnitId, unitId))));
 }

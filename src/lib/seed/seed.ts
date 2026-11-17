@@ -60,7 +60,7 @@ export const DEFAULT_PROVIDER_POLICY: t.ProviderPolicy = {
 };
 
 export async function seedReference() {
-  const db = await getDb();
+  const db = await getDb("system");
   const pw = hashPassword(DEMO_PASSWORD, "threadline-demo-salt");
   await db.transaction(async (tx) => {
     await tx.insert(t.organizations).values(ORGS);
@@ -89,7 +89,7 @@ const FOLDER_ORDER = ["shift-logs", "work-orders", "email", "policies", "docs"];
 
 /** Import every corpus file from disk through submitFile/runJob, as an upload would be. */
 export async function seedCorpus(dataRoot = path.resolve("data")) {
-  const db = await getDb();
+  const db = await getDb("system");
   const manifest: { path: string; sourceId: string }[] = JSON.parse(fs.readFileSync(path.join(dataRoot, "manifest.json"), "utf8"));
   const rank = (p: string) => FOLDER_ORDER.findIndex((f) => p.includes(`/${f}/`));
   const files = manifest.filter((f) => !f.path.includes("/mock-sync/")).sort((a, b) => rank(a.path) - rank(b.path) || a.path.localeCompare(b.path));
@@ -109,7 +109,7 @@ export async function seedCorpus(dataRoot = path.resolve("data")) {
 }
 
 export async function isSeeded() {
-  const db = await getDb();
+  const db = await getDb("system");
   const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(t.organizations);
   return n > 0;
 }

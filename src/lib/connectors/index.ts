@@ -38,7 +38,7 @@ export const PLANNED_CONNECTORS = {
 
 export async function syncSource(ctx: AccessContext, sourceId: string) {
   assertCan(ctx, "ingest.run");
-  const db = await getDb();
+  const db = await getDb(ctx);
   const [source] = await db.select().from(dataSources).where(and(eq(dataSources.id, sourceId), scopeOf(ctx, dataSources)));
   if (!source) throw new Error("Source not found");
   if (source.mode !== "mock_connector") throw new Error("Only the simulated connector can be synced in this build.");

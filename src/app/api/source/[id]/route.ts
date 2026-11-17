@@ -15,7 +15,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   return withContext(async (ctx) => {
     const r = await getSourceRecord(ctx, id);
     if (!r) return notFound();
-    const db = await getDb();
+    const db = await getDb(ctx);
     const [src] = await db.select().from(dataSources).where(eq(dataSources.id, r.sourceId));
     const evs = await db.select().from(events).where(and(visibleScope(ctx, events), eq(events.sourceRecordId, r.id)));
     const cls = evs.length ? await db.select().from(claims).where(and(scopeOf(ctx, claims), inArray(claims.eventId, evs.map((e) => e.id)))).orderBy(claims.ord) : [];

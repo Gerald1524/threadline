@@ -17,7 +17,7 @@ import { NOW, as, useSeededDb } from "./helpers/db";
 describe("organization data controls", () => {
   useSeededDb();
   const marcus = as("u_marcus"), priya = as("u_priya");
-  const smokeCase = async () => (await (await getDb()).select().from(t.cases).where(and(eq(t.cases.propertyId, "prop_riverside"), eq(t.cases.number, "C-1001"))))[0];
+  const smokeCase = async () => (await (await getDb("system")).select().from(t.cases).where(and(eq(t.cases.propertyId, "prop_riverside"), eq(t.cases.number, "C-1001"))))[0];
 
   it("shows the source inventory with scopes, freshness, coverage and failures", async () => {
     const o = await getPrivacyOverview(marcus);
@@ -48,7 +48,7 @@ describe("organization data controls", () => {
   });
 
   it("with a key present but policy blocking, Ask answers deterministically, says why, and logs metadata only", async () => {
-    const db = await getDb();
+    const db = await getDb("system");
     await updateProviderPolicy(marcus, { task: "reasoning", provider: "none", allowedSensitivity: [] });
     process.env.ANTHROPIC_API_KEY = "test-placeholder";
     setNarratorForTests(undefined); // use the real gate
@@ -79,7 +79,7 @@ describe("organization data controls", () => {
   });
 
   it("approved disposal skips records under legal hold and propagates to derived data", async () => {
-    const db = await getDb();
+    const db = await getDb("system");
     const c = await smokeCase();
     await ask(priya, { question: "What do we know about the noise complaints from 5E about 6E?" }, { now: NOW }); // a cached answer citing noise records
     const [noise] = await db.select().from(t.cases).where(and(eq(t.cases.propertyId, "prop_riverside"), eq(t.cases.number, "C-1006")));
@@ -123,7 +123,7 @@ describe("organization data controls", () => {
   });
 
   it("export contains the organization's records with a hash manifest, and is audited", async () => {
-    const db = await getDb();
+    const db = await getDb("system");
     const exp = await exportOrganization(marcus);
     const { bytes, meta } = (await readBlob(db, marcus, exp.blobId!))!;
     expect(meta.mediaType).toBe("application/json");

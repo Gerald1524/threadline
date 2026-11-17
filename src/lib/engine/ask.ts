@@ -32,7 +32,7 @@ export const setNarratorForTests = (n: Narrator | null | undefined) => (narrator
 const DET_NOTE = "Composed directly from the records. No AI model is configured, so the wording is templated; facts, counts and citations are exact.";
 
 async function resolveCase(ctx: AccessContext, q: ParsedQuestion, focus: Focus, dir: Directory): Promise<{ caseId?: string; clarification?: { headline: string; suggestions: string[] } }> {
-  const db = await getDb();
+  const db = await getDb(ctx);
   if (q.caseNumber) {
     const [c] = await db.select().from(t.cases).where(and(visibleScope(ctx, t.cases), eq(t.cases.number, q.caseNumber)));
     if (c) return { caseId: c.id };
@@ -118,7 +118,7 @@ export async function ask(ctx: AccessContext, input: { question: string; convers
   assertCan(ctx, "ask");
   const started = Date.now();
   const now = opts.now ?? new Date();
-  const db = await getDb();
+  const db = await getDb(ctx);
   const question = input.question.trim().slice(0, 2000);
   if (question.length < 2) throw new Error("Ask a question about a unit, resident, case or work order.");
 
@@ -205,7 +205,7 @@ export async function answerForCase(ctx: AccessContext, caseId: string, now = ne
   const started = Date.now();
   const ev = await buildCaseEvidence(ctx, caseId, now);
   if (!ev) return null;
-  const db = await getDb();
+  const db = await getDb(ctx);
   const dir = await loadDirectory(db, ctx.propertyId);
   const draft = composeCaseOverview(ctx, ev);
   const checked = await verifyClaims(ctx, draft.claims, { facts: draft.facts, timeline: draft.timeline, staffNames: dir.staff.map((s) => s.fullName), directObservation: !!ev.direct.length });

@@ -10,13 +10,15 @@ import { SourcePanelProvider } from "@/components/source-panel";
 import { Badge, btn } from "@/components/ui";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const ctx = await requireContext();
-  const db = await getDb();
+  // The layout also wraps the account page, where someone who must set up two-step
+  // verification is sent; every other page enforces it through its own requireContext().
+  const ctx = await requireContext(undefined, { allowTwoStepSetup: true });
+  const db = await getDb(ctx);
   const { options } = await listAccessibleProperties(ctx.userId);
   const n = async (q: Promise<{ n: number }[]>) => (await q)[0]?.n ?? 0;
   const reviewN = can(ctx, "review.read") ? await n(db.select({ n: sql<number>`count(*)::int` }).from(reviewItems).where(and(scopeOf(ctx, reviewItems), eq(reviewItems.status, "open")))) : 0;
   const approvalN = can(ctx, "approvals.decide") ? await n(db.select({ n: sql<number>`count(*)::int` }).from(approvals).where(and(scopeOf(ctx, approvals), eq(approvals.status, "pending")))) : 0;
-  const items: NavItem[] = [
+  const items: NavItem[] = ctx.mustEnrollTwoStep ? [] : [
     { href: "/", label: "Ask", icon: "ask" },
     { href: "/cases", label: "Cases", icon: "cases" },
     { href: "/activity", label: "Activity log", icon: "activity" },

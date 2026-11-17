@@ -14,7 +14,7 @@ const TYPES: Record<string, string[]> = { reports: ["complaint_report", "request
 export default async function ActivityPage({ searchParams }: { searchParams: Promise<{ type?: string; q?: string; unit?: string }> }) {
   const ctx = await requireContext("activity.read");
   const sp = await searchParams;
-  const db = await getDb();
+  const db = await getDb(ctx);
   const unit = sp.unit ? (await db.select().from(units).where(and(eq(units.propertyId, ctx.propertyId), eq(units.label, sp.unit.toUpperCase().replace(/[^0-9A-Z]/g, "")))))[0] : undefined;
   const where = and(
     visibleScope(ctx, events), inArray(events.status, ["active", "duplicate"]),

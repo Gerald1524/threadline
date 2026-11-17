@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { decideLifecycleAction, exportAction, proposeLifecycleAction, setExcludedAction, setSourceStatusAction, updateProviderPolicyAction, updateRetentionAction } from "@/app/actions";
+import { decideLifecycleAction, exportAction, proposeLifecycleAction, setExcludedAction, setSourceStatusAction, setTwoStepRequirementAction, updateProviderPolicyAction, updateRetentionAction } from "@/app/actions";
 import type { AiTask } from "@/lib/ai/provider";
 import { ResultNote, useAction } from "./dialogs";
 import { Badge, Button, StatusBadge, inputCls } from "./ui";
@@ -136,6 +136,25 @@ export function ExportPanel({ exports, editable }: { exports: { id: string; at: 
       {editable ? <Button variant="primary" disabled={pending} data-testid="create-export" onClick={() => run(() => exportAction())}>{pending ? "Preparing…" : "Create export"}</Button> : null}
       {!result?.ok ? <ResultNote result={result} /> : null}
       {exports.length ? <ul className="space-y-1.5">{exports.map((e) => <li key={e.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-stone-200 px-3 py-2" data-testid="export-row"><span>{e.at} · {e.records} source records<span className="block font-mono text-[11px] text-stone-500">sha256 {e.sha.slice(0, 24)}…</span></span>{editable ? <a href={`/api/export/${e.id}`} className="text-xs font-medium text-brand-700 hover:underline">Download JSON</a> : null}</li>)}</ul> : <p className="text-stone-500">No export has been created.</p>}
+    </div>
+  );
+}
+
+export function TwoStepRequirementPanel({ required, enabled, total, editable }: { required: boolean; enabled: number; total: number; editable: boolean }) {
+  const { pending, result, run } = useAction();
+  return (
+    <div className="space-y-3 px-5 py-4 text-sm" data-testid="two-step-requirement">
+      <p className="flex flex-wrap items-center gap-2">
+        {required ? <Badge tone="green">Required for everyone</Badge> : <Badge>Optional</Badge>}
+        <span className="text-stone-600">{enabled} of {total} active accounts have two-step verification on.</span>
+      </p>
+      <p className="text-xs text-stone-500">{required ? "Anyone without it is asked to set it up before they can do anything else, and nobody can turn it off." : "When required, anyone without it is asked to set it up at their next request. Turn it on for your own account first."}</p>
+      {editable ? (
+        <Button size="sm" variant={required ? "secondary" : "primary"} disabled={pending} onClick={() => run(() => setTwoStepRequirementAction(!required))} data-testid="toggle-two-step-requirement">
+          {required ? "Stop requiring it" : "Require two-step verification"}
+        </Button>
+      ) : null}
+      <ResultNote result={result} />
     </div>
   );
 }

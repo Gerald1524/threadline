@@ -33,7 +33,7 @@ const NEGATED = /\b(no|not|never|cannot|can't|do not|does not|did not|have not|h
 export type VerifyContext = { facts: Fact[]; timeline: TimelineItem[]; staffNames: string[]; directObservation: boolean; extraCounts?: Record<string, number> };
 
 export async function verifyClaims(ctx: AccessContext, claims: Omit<AnswerClaim, "verification">[], v: VerifyContext): Promise<AnswerClaim[]> {
-  const db = await getDb();
+  const db = await getDb(ctx);
   const ids = [...new Set(claims.flatMap((c) => c.sourceIds))];
   const rows = ids.length ? await db.select().from(sourceRecords).where(and(visibleScope(ctx, sourceRecords), inArray(sourceRecords.id, ids))) : [];
   const byId = new Map(rows.map((r) => [r.id, r]));

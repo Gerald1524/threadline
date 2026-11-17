@@ -10,7 +10,7 @@ import { NOW, as, useSeededDb } from "./helpers/db";
 describe("case packet PDF", () => {
   useSeededDb();
   const priya = as("u_priya");
-  const smoke = async () => (await (await getDb()).select().from(t.cases).where(and(eq(t.cases.propertyId, "prop_riverside"), eq(t.cases.number, "C-1001"))))[0];
+  const smoke = async () => (await (await getDb("system")).select().from(t.cases).where(and(eq(t.cases.propertyId, "prop_riverside"), eq(t.cases.number, "C-1001"))))[0];
 
   it("requires the reviewer's confirmation", async () => {
     await expect(generatePacket(priya, { caseId: (await smoke()).id, reviewed: false })).rejects.toThrow(/Confirm that you have reviewed/);

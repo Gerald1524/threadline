@@ -29,6 +29,6 @@ export default defineConfig({
     url: `http://localhost:${PORT}/login`,
     timeout: 240_000,
     reuseExistingServer: false,
-    env: { ...dbEnv, ANTHROPIC_API_KEY: "", OPENAI_API_KEY: "", THREADLINE_DEMO_LOGIN: "1", THREADLINE_INSECURE_COOKIES: "1", SESSION_SECRET: "e2e-only-secret-e2e-only-secret-e2e-only" },
+    env: { ...dbEnv, ANTHROPIC_API_KEY: "", OPENAI_API_KEY: "", THREADLINE_DEMO_LOGIN: "1", THREADLINE_INSECURE_COOKIES: "1", SESSION_SECRET: "e2e-only-secret-e2e-only-secret-e2e-only", THREADLINE_ENCRYPTION_KEY: "e2e-only-encryption-key-e2e-only-encryption-key" },
   },
 });

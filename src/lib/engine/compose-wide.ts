@@ -21,7 +21,7 @@ const empty = (intent: string): Draft => ({ intent, headline: "", claims: [], fa
 export async function sourceRefs(ctx: AccessContext, ids: string[]): Promise<SourceRef[]> {
   const uniq = [...new Set(ids)];
   if (!uniq.length) return [];
-  const db = await getDb();
+  const db = await getDb(ctx);
   const rows = await db.select().from(t.sourceRecords).where(and(visibleScope(ctx, t.sourceRecords), inArray(t.sourceRecords.id, uniq)));
   const srcs = new Map((await db.select().from(t.dataSources).where(scopeOf(ctx, t.dataSources))).map((s) => [s.id, s.name]));
   const byId = new Map(rows.map((r) => [r.id, r]));
@@ -32,7 +32,7 @@ export async function sourceRefs(ctx: AccessContext, ids: string[]): Promise<Sou
 }
 
 export async function coverageNotes(ctx: AccessContext): Promise<CoverageNote[]> {
-  const db = await getDb();
+  const db = await getDb(ctx);
   const [c] = await db.select().from(t.cases).where(visibleScope(ctx, t.cases)).limit(1);
   if (!c) return [];
   return (await buildCaseEvidence(ctx, c.id))?.coverage ?? [];
@@ -91,7 +91,7 @@ export async function composePolicy(ctx: AccessContext, q: ParsedQuestion, focus
   const older = policy.versions.filter((x) => x.status === "superseded");
   if (older.length) add("note", `Version${older.length > 1 ? "s" : ""} ${older.map((x) => x.version).join(", ")} of this policy ${older.length > 1 ? "are" : "is"} superseded and no longer applies.`, older.flatMap((x) => (x.sourceRecordId ? [x.sourceRecordId] : [])));
   if (can(ctx, "management.read")) {
-    const db = await getDb();
+    const db = await getDb(ctx);
     const docs = await db.select().from(t.sourceRecords).where(and(visibleScope(ctx, t.sourceRecords), eq(t.sourceRecords.kind, "document"), sql`${t.sourceRecords.rawJson}->>'draft' = 'true'`));
     const related = docs.filter((d) => [...clauseKeywords(policy.title)].some((w) => d.rawText.toLowerCase().includes(w)));
     for (const d of related) add("note", `A draft working document ("${d.title}") also discusses this topic. It is not approved policy and was not used for this answer.`, [d.id]);
@@ -119,7 +119,7 @@ export async function composeBriefing(ctx: AccessContext, now: Date): Promise<Dr
   const out: C[] = [];
   const add = mk(out);
   const tz = ctx.timezone;
-  const db = await getDb();
+  const db = await getDb(ctx);
   const open = await db.select().from(t.cases).where(and(visibleScope(ctx, t.cases), inArray(t.cases.status, ["open", "investigating", "awaiting_response"]))).orderBy(desc(t.cases.openedAt));
   const evidences = (await Promise.all(open.map((c) => buildCaseEvidence(ctx, c.id, now)))).filter((e): e is CaseEvidence => !!e);
   evidences.sort((a, b) => (b.confirmed.at(-1)?.occurredAt ?? "").localeCompare(a.confirmed.at(-1)?.occurredAt ?? ""));
@@ -166,7 +166,7 @@ export async function composeUnitHistory(ctx: AccessContext, unitLabel: string, 
   const out: C[] = [];
   const add = mk(out);
   const tz = ctx.timezone;
-  const db = await getDb();
+  const db = await getDb(ctx);
   const [unit] = await db.select().from(t.units).where(and(scopeOf(ctx, t.units), eq(t.units.label, unitLabel)));
   if (!unit) {
     draft.headline = `There is no unit ${unitLabel} at ${ctx.propertyName}.`;

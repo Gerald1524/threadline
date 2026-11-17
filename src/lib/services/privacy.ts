@@ -9,7 +9,7 @@ import { z } from "zod";
 import { assertCan, scopeOf, type AccessContext } from "../access";
 import { audit, verifyAuditChain } from "../audit";
 import { PROVIDER_CATALOG, keyConfigured, type AiTask } from "../ai/provider";
-import { getDb, type Queryable } from "../db/client";
+import { getDb, rowLevelSecurityStatus, type Queryable } from "../db/client";
 import * as t from "../db/schema";
 import { SENSITIVITY_ORDER } from "../ingest/lexicon";
 import { deleteBlobFile, putBlob } from "../storage";
@@ -20,7 +20,7 @@ const orgScope = (ctx: AccessContext, col: AnyPgColumn) => eq(col, ctx.orgId);
 
 export async function getPrivacyOverview(ctx: AccessContext) {
   assertCan(ctx, "privacy.view");
-  const db = await getDb();
+  const db = await getDb(ctx);
   const [settings] = await db.select().from(t.orgSettings).where(eq(t.orgSettings.orgId, ctx.orgId));
   const sources = await db.select().from(t.dataSources).where(scopeOf(ctx, t.dataSources)).orderBy(t.dataSources.createdAt, t.dataSources.name);
   const counts = await db.select({ sourceId: t.sourceRecords.sourceId, n: sql<number>`count(*)::int` }).from(t.sourceRecords).where(and(scopeOf(ctx, t.sourceRecords), eq(t.sourceRecords.isCurrent, true))).groupBy(t.sourceRecords.sourceId);
@@ -31,8 +31,10 @@ export async function getPrivacyOverview(ctx: AccessContext) {
   const exportsList = await db.select().from(t.exportsTable).where(orgScope(ctx, t.exportsTable.orgId)).orderBy(desc(t.exportsTable.createdAt)).limit(5);
   const providerLog = await db.select({ provider: t.providerRequests.provider, task: t.providerRequests.task, status: t.providerRequests.status, n: sql<number>`count(*)::int`, last: sql<string>`max(${t.providerRequests.at})` }).from(t.providerRequests).where(orgScope(ctx, t.providerRequests.orgId)).groupBy(t.providerRequests.provider, t.providerRequests.task, t.providerRequests.status);
   const chain = await verifyAuditChain(db, ctx.orgId);
+  const isolation = await rowLevelSecurityStatus();
+  const [twoStep] = await db.select({ total: sql<number>`count(*)::int`, enabled: sql<number>`count(*) filter (where ${t.users.totpEnabled})::int` }).from(t.users).where(and(eq(t.users.orgId, ctx.orgId), eq(t.users.active, true)));
   return {
-    settings, chain, holds, lifecycle, exports: exportsList, providerLog, classCounts: byClass,
+    settings, chain, isolation, twoStep: { ...twoStep, required: !!settings?.requireTwoStep }, holds, lifecycle, exports: exportsList, providerLog, classCounts: byClass,
     sources: sources.map((s) => ({ ...s, records: counts.find((c) => c.sourceId === s.id)?.n ?? 0, failedJobs: failed.filter((j) => j.sourceId === s.id) })),
     providers: (Object.keys(PROVIDER_CATALOG) as AiTask[]).map((task) => ({ task, selected: settings?.providerPolicy[task]?.provider ?? "none", allowedSensitivity: settings?.providerPolicy[task]?.allowedSensitivity ?? [], options: PROVIDER_CATALOG[task].map((o) => ({ ...o, configured: keyConfigured(o.envKey) })) })),
   };
@@ -41,7 +43,7 @@ export async function getPrivacyOverview(ctx: AccessContext) {
 export async function setSourceStatus(ctx: AccessContext, input: { sourceId: string; status: "active" | "paused" | "disconnected" }) {
   assertCan(ctx, "privacy.admin");
   const v = z.object({ sourceId: z.string(), status: z.enum(["active", "paused", "disconnected"]) }).parse(input);
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.transaction(async (tx) => {
     const [s] = await tx.select().from(t.dataSources).where(and(eq(t.dataSources.id, v.sourceId), scopeOf(ctx, t.dataSources)));
     if (!s) throw new WorkflowError("Source not found");
@@ -54,10 +56,30 @@ export async function setSourceStatus(ctx: AccessContext, input: { sourceId: str
   });
 }
 
+/**
+ * Organization-wide requirement for two-step verification. People without it are sent to set
+ * it up at their next request (src/lib/auth/session.ts). The admin must have it on first.
+ */
+export async function setTwoStepRequirement(ctx: AccessContext, required: boolean) {
+  assertCan(ctx, "privacy.admin");
+  const db = await getDb(ctx);
+  return db.transaction(async (tx) => {
+    const [s] = await tx.select().from(t.orgSettings).where(eq(t.orgSettings.orgId, ctx.orgId));
+    if (s.requireTwoStep === required) return { required };
+    if (required) {
+      const [me] = await tx.select({ on: t.users.totpEnabled }).from(t.users).where(eq(t.users.id, ctx.userId));
+      if (!me?.on) throw new WorkflowError("Turn on two-step verification for your own account first (select your name, top right).");
+    }
+    await tx.update(t.orgSettings).set({ requireTwoStep: required, updatedAt: new Date(), updatedBy: ctx.userId }).where(eq(t.orgSettings.orgId, ctx.orgId));
+    await audit(tx, ctx, "security.two_step_requirement_changed", "org_settings", ctx.orgId, { from: s.requireTwoStep, to: required });
+    return { required };
+  });
+}
+
 export async function updateRetention(ctx: AccessContext, input: { recordClass: string; days: number | null }) {
   assertCan(ctx, "privacy.admin");
   const v = z.object({ recordClass: z.enum(SENSITIVITY_ORDER), days: z.number().int().min(30).max(36500).nullable() }).parse(input);
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.transaction(async (tx) => {
     const [s] = await tx.select().from(t.orgSettings).where(eq(t.orgSettings.orgId, ctx.orgId));
     const retention = { ...s.retention, [v.recordClass]: { days: v.days } };
@@ -70,7 +92,7 @@ export async function updateProviderPolicy(ctx: AccessContext, input: { task: Ai
   assertCan(ctx, "privacy.admin");
   const v = z.object({ task: z.enum(["reasoning", "classification", "transcription", "speech", "embeddings"]), provider: z.string(), allowedSensitivity: z.array(z.enum(SENSITIVITY_ORDER)) }).parse(input);
   if (!PROVIDER_CATALOG[v.task].some((p) => p.id === v.provider)) throw new WorkflowError("That provider is not on the shortlist for this task.");
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.transaction(async (tx) => {
     const [s] = await tx.select().from(t.orgSettings).where(eq(t.orgSettings.orgId, ctx.orgId));
     const providerPolicy = { ...s.providerPolicy, [v.task]: { provider: v.provider, allowedSensitivity: v.allowedSensitivity } };
@@ -82,7 +104,7 @@ export async function updateProviderPolicy(ctx: AccessContext, input: { task: Ai
 export async function setExcludedSensitivity(ctx: AccessContext, classes: string[]) {
   assertCan(ctx, "privacy.admin");
   const v = z.array(z.enum(SENSITIVITY_ORDER)).parse(classes);
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.transaction(async (tx) => {
     await tx.update(t.orgSettings).set({ excludedSensitivity: v, updatedAt: new Date(), updatedBy: ctx.userId }).where(eq(t.orgSettings.orgId, ctx.orgId));
     await audit(tx, ctx, "ingestion_scope.updated", "org_settings", ctx.orgId, { excluded: v });
@@ -94,7 +116,7 @@ export async function setExcludedSensitivity(ctx: AccessContext, classes: string
 export async function placeLegalHold(ctx: AccessContext, input: { caseId: string; reason: string; at?: Date }) {
   assertCan(ctx, "cases.manage");
   const v = z.object({ caseId: z.string(), reason: z.string().trim().min(5).max(1000) }).parse(input);
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.transaction(async (tx) => {
     const [c] = await tx.select().from(t.cases).where(and(eq(t.cases.id, v.caseId), scopeOf(ctx, t.cases)));
     if (!c) throw new WorkflowError("Case not found");
@@ -109,7 +131,7 @@ export async function placeLegalHold(ctx: AccessContext, input: { caseId: string
 
 export async function releaseLegalHold(ctx: AccessContext, holdId: string) {
   assertCan(ctx, "privacy.admin");
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.transaction(async (tx) => {
     const [h] = await tx.update(t.legalHolds).set({ releasedBy: ctx.userId, releasedAt: new Date() }).where(and(eq(t.legalHolds.id, holdId), eq(t.legalHolds.orgId, ctx.orgId), isNull(t.legalHolds.releasedAt))).returning();
     if (h) await audit(tx, ctx, "legal_hold.released", "case", h.caseId, { holdId });
@@ -136,7 +158,7 @@ const matchLifecycle = (orgId: string, recordClass: string, olderThan: Date) =>
  */
 export async function retentionReview(ctx: AccessContext, now = new Date()) {
   assertCan(ctx, "privacy.view");
-  const db = await getDb();
+  const db = await getDb(ctx);
   const [settings] = await db.select().from(t.orgSettings).where(eq(t.orgSettings.orgId, ctx.orgId));
   const held = await heldRecordIds(db, ctx.orgId);
   const out: { recordClass: string; days: number; cutoff: Date; eligible: number; held: number }[] = [];
@@ -153,7 +175,7 @@ export async function retentionReview(ctx: AccessContext, now = new Date()) {
 export async function proposeLifecycle(ctx: AccessContext, input: { action: "archive" | "dispose"; recordClass: string; olderThan: Date }) {
   assertCan(ctx, "privacy.admin");
   const v = z.object({ action: z.enum(["archive", "dispose"]), recordClass: z.enum(SENSITIVITY_ORDER), olderThan: z.date() }).parse(input);
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.transaction(async (tx) => {
     const matched = await tx.select({ id: t.sourceRecords.id }).from(t.sourceRecords).where(matchLifecycle(ctx.orgId, v.recordClass, v.olderThan));
     const held = await heldRecordIds(tx, ctx.orgId);
@@ -172,7 +194,7 @@ export async function proposeLifecycle(ctx: AccessContext, input: { action: "arc
  */
 export async function decideLifecycle(ctx: AccessContext, input: { id: string; decision: "execute" | "reject"; confirm?: string }) {
   assertCan(ctx, "privacy.admin");
-  const db = await getDb();
+  const db = await getDb(ctx);
   const filesToDelete: { orgId: string; sha: string }[] = [];
   const result = await db.transaction(async (tx) => {
     const [req] = await tx.select().from(t.lifecycleRequests).where(and(eq(t.lifecycleRequests.id, input.id), eq(t.lifecycleRequests.orgId, ctx.orgId)));
@@ -228,7 +250,7 @@ const EXPORT_TABLES = { properties: t.properties, units: t.units, data_sources: 
 /** Administrator-controlled export of the organization's records, with a source manifest. */
 export async function exportOrganization(ctx: AccessContext) {
   assertCan(ctx, "privacy.admin");
-  const db = await getDb();
+  const db = await getDb(ctx);
   const tables: Record<string, unknown[]> = {};
   for (const [name, table] of Object.entries(EXPORT_TABLES)) tables[name] = await db.select().from(table).where(eq((table as typeof t.cases).orgId, ctx.orgId));
   const sourceManifest = (tables.source_records as (typeof t.sourceRecords.$inferSelect)[]).map((r) => ({ id: r.id, sourceId: r.sourceId, externalId: r.externalId, version: r.version, contentHash: r.contentHash, lifecycle: r.lifecycle }));
@@ -244,6 +266,6 @@ export async function exportOrganization(ctx: AccessContext) {
 
 export async function listAudit(ctx: AccessContext, limit = 80) {
   assertCan(ctx, "audit.read");
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.select().from(t.auditLog).where(and(eq(t.auditLog.orgId, ctx.orgId), sql`(${t.auditLog.propertyId} = ${ctx.propertyId} or ${t.auditLog.propertyId} is null)`)).orderBy(desc(t.auditLog.seq)).limit(limit);
 }

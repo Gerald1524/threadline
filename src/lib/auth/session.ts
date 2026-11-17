@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { SignJWT, jwtVerify } from "jose";
 import { and, eq } from "drizzle-orm";
 import { dataDir, getDb } from "../db/client";
-import { memberships, properties, users } from "../db/schema";
+import { memberships, orgSettings, properties, users } from "../db/schema";
 import { AccessDenied, can, type AccessContext, type Capability, type Role } from "../access";
 
 const COOKIE = "tl_session";
@@ -15,6 +15,7 @@ const MAX_AGE_S = 60 * 60 * 10; // one long shift
 
 function secret(): Uint8Array {
   let s = process.env.SESSION_SECRET;
+  if (!s && process.env.NODE_ENV === "production") throw new Error("SESSION_SECRET is not set. It is required in production (see docs/DEPLOYMENT.md).");
   if (!s) {
     // Dev convenience: persist a random secret beside the embedded database (never committed).
     const file = path.join(dataDir(), "session-secret");
@@ -39,7 +40,8 @@ export async function destroySession() {
 
 /** Memberships a user may act under. An org-wide membership expands to every property in the org. */
 export async function listAccessibleProperties(userId: string) {
-  const db = await getDb();
+  // Identity resolution: runs before an organization-scoped context exists.
+  const db = await getDb("system");
   const [user] = await db.select().from(users).where(and(eq(users.id, userId), eq(users.active, true)));
   if (!user) return { user: null, options: [] as { propertyId: string; propertyName: string; timezone: string; role: Role }[] };
   const ms = await db.select().from(memberships).where(and(eq(memberships.userId, userId), eq(memberships.orgId, user.orgId)));
@@ -71,12 +73,22 @@ export async function getContext(): Promise<AccessContext | null> {
   const { user, options } = await listAccessibleProperties(sub);
   const opt = options.find((o) => o.propertyId === pid);
   if (!user || !opt) return null;
-  return { userId: user.id, userName: user.fullName, orgId: user.orgId, propertyId: opt.propertyId, propertyName: opt.propertyName, timezone: opt.timezone, role: opt.role, employmentType: user.employmentType };
+  const [s] = await (await getDb({ orgId: user.orgId })).select({ required: orgSettings.requireTwoStep }).from(orgSettings).where(eq(orgSettings.orgId, user.orgId));
+  return {
+    userId: user.id, userName: user.fullName, orgId: user.orgId, propertyId: opt.propertyId, propertyName: opt.propertyName, timezone: opt.timezone, role: opt.role, employmentType: user.employmentType,
+    mustEnrollTwoStep: !!s?.required && !user.totpEnabled,
+  };
 }
 
-export async function requireContext(cap?: Capability): Promise<AccessContext> {
+/**
+ * The gate for every page and server action. When the organization requires two-step
+ * verification and this person has not set it up, everything except the account page
+ * (which passes allowTwoStepSetup) sends them there first.
+ */
+export async function requireContext(cap?: Capability, opts: { allowTwoStepSetup?: boolean } = {}): Promise<AccessContext> {
   const ctx = await getContext();
   if (!ctx) redirect("/login");
+  if (ctx.mustEnrollTwoStep && !opts.allowTwoStepSetup) redirect("/account?required=1");
   if (cap && !can(ctx, cap)) throw new AccessDenied(cap);
   return ctx;
 }

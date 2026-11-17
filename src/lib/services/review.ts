@@ -7,7 +7,7 @@ import { WorkflowError } from "./cases";
 
 export async function listReviewItems(ctx: AccessContext, status: "open" | "all" = "open") {
   assertCan(ctx, "review.read");
-  const db = await getDb();
+  const db = await getDb(ctx);
   const rows = await db.select().from(reviewItems).where(status === "open" ? and(scopeOf(ctx, reviewItems), eq(reviewItems.status, "open")) : scopeOf(ctx, reviewItems)).orderBy(desc(reviewItems.createdAt));
   return rows;
 }
@@ -22,7 +22,7 @@ export type ReviewDecision = "confirm" | "reject" | "acknowledge" | "restrict";
  */
 export async function resolveReview(ctx: AccessContext, input: { id: string; decision: ReviewDecision; note?: string; at?: Date }) {
   assertCan(ctx, "review.resolve");
-  const db = await getDb();
+  const db = await getDb(ctx);
   return db.transaction(async (tx) => {
     const [item] = await tx.select().from(reviewItems).where(and(eq(reviewItems.id, input.id), scopeOf(ctx, reviewItems)));
     if (!item) throw new WorkflowError("Review item not found");
