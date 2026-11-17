@@ -49,7 +49,8 @@ export async function loginAction(_prev: { error?: string } | undefined, form: F
   const ok = passwordOk && (!user.totpEnabled || !!(await verifySignInSecondFactor(user.id, code)));
   if (!ok) {
     attempts.set(email, { n: (a && a.until > Date.now() ? a.n : 0) + 1, until: Date.now() + 10 * 60_000 });
-    return { error: user?.totpEnabled ? "Email, password or verification code is incorrect." : "Email or password is incorrect." };
+    // One message for every failure, so it does not reveal which emails exist or use two-step verification.
+    return { error: "Email, password or verification code is incorrect." };
   }
   attempts.delete(email);
   const { options } = await listAccessibleProperties(user.id);
